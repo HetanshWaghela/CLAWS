@@ -5,5 +5,7 @@ __pycache__/
 *.log
 .pytest_cache/
 data/uploads/
+app/__pycache__/
 data/results/
 *.pdf
+claws_info.txt
