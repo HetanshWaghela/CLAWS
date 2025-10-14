@@ -3,6 +3,7 @@ from uuid import uuid4
 from pydantic import BaseModel
 from pathlib import Path
 import json
+from app.parser import parse_pdf
 
 app = FastAPI()
 
@@ -36,19 +37,22 @@ async def analyze(pdf:UploadFile):
     uploads.mkdir(parents= True, exist_ok= True)
     dest= uploads/ f"{job_id}.pdf"
     dest.write_bytes(await pdf.read())
-
+    clauses= parse_pdf(str(dest))
     results_dir = Path("data/results")
     results_dir.mkdir(parents= True, exist_ok= True)
-    stub= Result(job_id=job_id, status="done",clauses=[])
+    stub= Result(job_id=job_id, status="done",clauses=clauses)
     (results_dir/ f"{job_id}.json").write_text(stub.model_dump_json())
     return AnalyzeResponse(job_id=job_id, filename=pdf.filename)
 
-@app.get("/results/{job_id}")
+@app.get("/result/{job_id}")
 def get_result(job_id: str):
     path = Path("data/results") / f"{job_id}.json"
     if not path.exists():
         raise HTTPException(status_code=404, detail="Unknown job_id")
     return json.loads(path.read_text())
+
+#we implement the stub(parser.py)
+
 
 
 
