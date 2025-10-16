@@ -3,6 +3,7 @@ import time
 import json
 import requests
 import streamlit as st
+import base64
 
 API_BASE = os.environ.get("API_BASE", "http://localhost:8000")
 
@@ -48,7 +49,85 @@ if uploaded is not None:
         if last_status == "done":
     
             clauses = body.get("clauses", [])
-            st.subheader("Detected blocks")
+            # Native PDF viewer via PDF.js (no iframes, no PNGs)
+            st.subheader("Document")
+            pdf_viewer = f"""
+            <div id="pdf-container" style="border:1px solid #ddd; padding:8px;">
+              <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                <button id=\"prev\">Prev</button>
+                <button id=\"next\">Next</button>
+                <span>Page: <span id=\"page_num\">1</span> / <span id=\"page_count\">?</span></span>
+                <button id=\"zoom_out\">-</button>
+                <span>Zoom</span>
+                <button id=\"zoom_in\">+</button>
+              </div>
+              <canvas id=\"the-canvas\" style=\"width:100%; border:1px solid #eee;\"></canvas>
+            </div>
+            <script src=\"https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js\"></script>
+            <script>
+              (async () => {{
+                pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+
+                const pdfUrl = "{API_BASE}/pdf/{job_id}";
+                const resp = await fetch(pdfUrl, {{ credentials: 'omit' }});
+                if (!resp.ok) {{
+                  document.getElementById('pdf-container').innerHTML = "Failed to load PDF (status " + resp.status + ")";
+                  return;
+                }}
+                const buf = await resp.arrayBuffer();
+                const loadingTask = pdfjsLib.getDocument({{data: buf}});
+                const pdf = await loadingTask.promise;
+
+                const canvas = document.getElementById('the-canvas');
+                const ctx = canvas.getContext('2d');
+                const pageNumSpan = document.getElementById('page_num');
+                const pageCountSpan = document.getElementById('page_count');
+                const prevBtn = document.getElementById('prev');
+                const nextBtn = document.getElementById('next');
+                const zoomInBtn = document.getElementById('zoom_in');
+                const zoomOutBtn = document.getElementById('zoom_out');
+
+                let currentPage = 1;
+                let scale = 1.2;
+
+                pageCountSpan.textContent = pdf.numPages;
+
+                async function renderPage(num) {{
+                  const page = await pdf.getPage(num);
+                  const viewport = page.getViewport({{ scale }});
+                  canvas.height = viewport.height;
+                  canvas.width = viewport.width;
+                  await page.render({{ canvasContext: ctx, viewport }}).promise;
+                  pageNumSpan.textContent = num;
+                }}
+
+                prevBtn.onclick = () => {{
+                  if (currentPage <= 1) return;
+                  currentPage--;
+                  renderPage(currentPage);
+                }};
+
+                nextBtn.onclick = () => {{
+                  if (currentPage >= pdf.numPages) return;
+                  currentPage++;
+                  renderPage(currentPage);
+                }};
+
+                zoomInBtn.onclick = () => {{
+                  scale = Math.min(scale + 0.2, 3.0);
+                  renderPage(currentPage);
+                }};
+                zoomOutBtn.onclick = () => {{
+                  scale = Math.max(scale - 0.2, 0.4);
+                  renderPage(currentPage);
+                }};
+
+                renderPage(currentPage);
+              }})();
+            </script>
+            """
+            st.components.v1.html(pdf_viewer, height=700)
+
             st.write(f"Total: {len(clauses)}")
             if clauses:
                 for i, c in enumerate(clauses[:10], start=1):

@@ -1,4 +1,5 @@
-from fastapi import FastAPI,UploadFile, HTTPException
+from fastapi import FastAPI,UploadFile, HTTPException, Response
+from fastapi.responses import FileResponse
 from uuid import uuid4
 from pydantic import BaseModel
 from pathlib import Path
@@ -7,7 +8,9 @@ import os
 import queue
 from threading import Thread
 import json
+import fitz
 from app.parser import parse_pdf
+
 
 app = FastAPI()
 
@@ -88,8 +91,15 @@ def get_result(job_id: str):
         raise HTTPException(status_code=404, detail="Unknown job_id")
     return data
 
-
-
-
-
+@app.get("/pdf/{job_id}")
+def get_pdf(job_id: str):
+    pdf_path= data_dir() / "uploads" / f"{job_id}.pdf"
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="Unknown job_id")
+    return FileResponse(
+        str(pdf_path),
+        media_type="application/pdf",
+        filename=f"{job_id}.pdf",
+        headers={"Content-Disposition": f"inline; filename={job_id}.pdf"}
+        )
 
