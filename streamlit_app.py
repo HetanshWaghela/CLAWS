@@ -102,25 +102,28 @@ if uploaded is not None:
     # Q&A Section (Second)
     st.subheader("❓ Ask Questions About This Contract")
     
-    question = st.text_input("Ask a question about the contract:", placeholder="e.g., What are the risks with the termination clause?")
+    question = st.text_input("Ask ANY question about this contract:", placeholder="e.g., What is this contract about? What are the payment terms? Who are the parties? What are the risks?")
     
     if question and st.button("Get Answer"):
         with st.spinner("Analyzing question..."):
             try:
-                clause_type = parse_question(question)
-                
-                if clause_type == 'GENERAL_CONTRACT':
-                    # Use LLM for general contract questions
+                # Always use LLM for ANY question about the PDF
+                if clauses:
+                    # Create comprehensive context from all detected clauses
+                    context_parts = []
+                    for clause in clauses:
+                        clause_type_name = clause.get('type', 'Unknown')
+                        clause_text = clause.get('text', '')
+                        page_num = clause.get('page', 'Unknown')
+                        context_parts.append(f"[Page {page_num}] {clause_type_name}: {clause_text}")
+                    
+                    # Add document metadata
+                    context_parts.insert(0, f"Document: {uploaded.name}")
+                    context_parts.insert(1, f"Total clauses detected: {len(clauses)}")
+                    
+                    context = " ".join(context_parts)
+                    
                     try:
-                        # Create better context for the legal Q&A model
-                        context_parts = []
-                        for clause in clauses[:15]:  # Use more clauses for better context
-                            clause_type_name = clause.get('type', 'Unknown')
-                            clause_text = clause.get('text', '')
-                            context_parts.append(f"{clause_type_name}: {clause_text}")
-                        
-                        context = " ".join(context_parts)
-                        
                         llm_generator = get_llm_generator()
                         answer = llm_generator.generate_explanation(context, question)
                         
@@ -128,75 +131,31 @@ if uploaded is not None:
                             st.success("**Answer:**")
                             st.write(answer)
                         else:
-                            # Fallback to rule-based summary
-                            answer = generate_contract_summary(clauses, question)
-                            st.success("**Answer:**")
-                            st.write(answer)
+                            # Fallback: Try to find relevant clauses manually
+                            relevant_clauses = []
+                            question_lower = question.lower()
+                            
+                            for clause in clauses:
+                                clause_text = clause.get('text', '').lower()
+                                if any(word in clause_text for word in question_lower.split() if len(word) > 3):
+                                    relevant_clauses.append(clause)
+                            
+                            if relevant_clauses:
+                                st.success("**Answer:**")
+                                st.write("Based on the contract analysis, here are the relevant sections:")
+                                for i, clause in enumerate(relevant_clauses[:3], 1):
+                                    st.write(f"{i}. **{clause.get('type', 'Unknown')}** (Page {clause.get('page', 'Unknown')}):")
+                                    st.write(f"   {clause.get('text', '')[:200]}...")
+                            else:
+                                st.info("I couldn't find specific information about your question in this contract. Try asking about specific topics like 'termination', 'payment', 'liability', or 'confidentiality'.")
                     except Exception as llm_error:
-                        # Fallback to rule-based summary
-                        answer = generate_contract_summary(clauses, question)
-                        st.success("**Answer:**")
-                        st.write(answer)
-                
-                elif clause_type == 'GENERAL_QUESTION':
-                    if clauses:
-                        # Create comprehensive context for RAG
-                        context_parts = []
-                        for clause in clauses:
-                            clause_type_name = clause.get('type', 'Unknown')
-                            clause_text = clause.get('text', '')
-                            context_parts.append(f"{clause_type_name}: {clause_text}")
-                        
-                        context = " ".join(context_parts)
-                        
-                        try:
-                            llm_generator = get_llm_generator()
-                            answer = llm_generator.generate_explanation(context, question)
-                        except Exception as llm_error:
-                            st.warning(f"LLM not available: {llm_error}")
-                            answer = "I can help you understand this contract. Try asking about specific clauses like 'What are the risks with the assignment clause?' or 'Tell me about the termination clause.'"
-                        
-                        if answer and answer != "No explanation available":
-                            st.success("**Answer:**")
-                            st.write(answer)
-                        else:
-                            st.info("I can help you understand this contract. Try asking about specific clauses like 'What are the risks with the assignment clause?' or 'Tell me about the termination clause.'")
-                    else:
-                        st.warning("No contract clauses were detected. Please ensure the contract was properly analyzed.")
-                
-                elif clause_type:
-                    clause = retrieve_clause(clause_type, clauses)
-                    policy = get_policy_explanation(clause_type)
-                    
-                    if not policy:
-                        clause_text = clause['text'] if clause else ""
-                        if clause_text:
-                            try:
-                                llm_generator = get_llm_generator()
-                                llm_answer = llm_generator.generate_explanation(clause_text, question)
-                                if llm_answer != "No explanation available":
-                                    answer = f"LLM Analysis: {llm_answer}"
-                                else:
-                                    answer = f"No risk information available for {clause_type} clauses."
-                            except Exception as llm_error:
-                                answer = f"No risk information available for {clause_type} clauses. (LLM not available)"
-                        else:
-                            answer = f"No {clause_type} clause found in the contract."
-                    else:
-                        clause_text = clause['text'] if clause else ""
-                        answer = generate_answer(clause_text, policy, question)
-                    
-                    st.success("**Answer:**")
-                    st.write(answer)
-                    
-                    if clause:
-                        st.info(f"**Found on page {clause.get('page', 1)}:** {clause.get('text', '')[:200]}...")
-                
+                        st.warning(f"AI analysis not available: {llm_error}")
+                        st.info("I can help you understand this contract. Try asking about specific clauses like 'What are the risks with the assignment clause?' or 'Tell me about the termination clause.'")
                 else:
-                    st.info("I can help you understand this contract. Try asking about specific clauses or general questions like 'What is this contract about?'")
+                    st.warning("No contract clauses were detected. Please ensure the contract was properly analyzed.")
                     
             except Exception as e:
-                st.error(f"Error processing question: {str(e)}")
+                st.error(f"Error processing question: {e}")
 
     # Display results (Third)
     if clauses:
