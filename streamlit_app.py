@@ -83,10 +83,10 @@ if dark_mode:
     
     /* Drag and drop text */
     .stFileUploader .uploadedFile::before {
-        color: #fafafa !important;
+        color: #000000 !important;
     }
     .stFileUploader .uploadedFile::after {
-        color: #cccccc !important;
+        color: #000000 !important;
     }
     
     /* Toggle switch */
