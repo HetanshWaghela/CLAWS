@@ -179,25 +179,25 @@ if uploaded is not None:
             mime="application/pdf"
         )
         
-        # Display PDF using Streamlit's native component
+        # Display PDF information and download option
         st.markdown("**PDF Preview (with detected clause highlights):**")
         
-        # Try native PDF display first
-        try:
-            st.pdf(highlighted_pdf_data)
-        except Exception as pdf_error:
-            st.warning(f"Native PDF viewer not available: {pdf_error}")
-            
-            # Fallback: Show PDF info and download option
-            st.info("📄 PDF is ready for download. Click the download button above to view the highlighted PDF with all detected clauses.")
-            
-            # Show PDF metadata
-            st.markdown("**PDF Information:**")
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("File Size", f"{len(highlighted_pdf_data) / 1024:.1f} KB")
-            with col2:
-                st.metric("Clauses Found", f"{len(clauses)}")
+        # Show PDF info and download option
+        st.info("📄 PDF is ready for download. Click the download button above to view the highlighted PDF with all detected clauses.")
+        
+        # Show PDF metadata
+        st.markdown("**PDF Information:**")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("File Size", f"{len(highlighted_pdf_data) / 1024:.1f} KB")
+        with col2:
+            st.metric("Clauses Found", f"{len(clauses)}")
+        
+        # Show a preview of detected clauses
+        if clauses:
+            st.markdown("**Detected Clauses Preview:**")
+            clause_types = list(set([clause.get('type', 'Unknown') for clause in clauses]))
+            st.write(f"Found {len(clause_types)} different clause types: {', '.join(clause_types[:5])}{'...' if len(clause_types) > 5 else ''}")
         
     except Exception as e:
         st.error(f"Could not display PDF: {e}")
