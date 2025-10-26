@@ -49,31 +49,23 @@ if uploaded_file is not None:
                 )
                 view_mode = "scroll" if mode_label.startswith("Scroll") else "paged"
                 
-                # Convert PDF to base64 for PDF.js
+                # Use the same PDF.js approach as ui/app.py
                 try:
                     with open(tmp_path, "rb") as f:
                         pdf_bytes = f.read()
                         base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
                     
-                    # Check if base64 is too long (browsers have limits)
-                    if len(base64_pdf) > 1000000:  # 1MB limit
-                        st.warning("PDF is too large for inline display. Using download option.")
-                        st.download_button(
-                            label="Download PDF",
-                            data=pdf_bytes,
-                            file_name=uploaded_file.name,
-                            mime="application/pdf"
-                        )
-                    else:
-                        pdf_html = f"""
+                    # Create a data URL for the PDF
+                    pdf_data_url = f"data:application/pdf;base64,{base64_pdf}"
+                    
+                    pdf_html = f"""
                     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/web/pdf_viewer.css"/>
                     <style>
                       .textLayer {{ position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; opacity: 0.2; line-height: 1.0; }}
                       .textLayer > span {{ color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; }}
                       .textLayer ::selection {{ background: rgb(0, 100, 255); }}
                       .highlightOverlay {{ position: absolute; background: rgba(255, 230, 0, 0.35); pointer-events: none; }}
-                      #pdf-container {{ min-height: 600px; }}
-                      #the-canvas {{ border: 1px solid #ccc; }}
+                      #floatingHighlightBtn {{ position: fixed; display: none; padding: 6px 12px; background: #ffeb3b; border: 1px solid #fbc02d; border-radius: 4px; cursor: pointer; z-index: 9999; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
                     </style>
                     <div id="pdf-container" style="border:1px solid #ddd; padding:8px;">
                       <div id="pager-controls" style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
@@ -83,6 +75,7 @@ if uploaded_file is not None:
                         <button id="zoom_out">-</button>
                         <span>Zoom</span>
                         <button id="zoom_in">+</button>
+                        <button id="sel_highlight">Highlight selection</button>
                       </div>
                       <div id="page-layer" style="position:relative; display:inline-block;">
                         <canvas id="the-canvas" style="display:block;"></canvas>
@@ -90,20 +83,16 @@ if uploaded_file is not None:
                         <div id="highlight-layer" style="position:absolute; left:0; top:0; pointer-events:none;"></div>
                       </div>
                       <div id="scroll-container" style="display:none; height:80vh; overflow:auto; border:1px solid #eee; padding:8px; box-sizing:border-box;"></div>
-                      <div id="error-message" style="display:none; color:red; padding:20px; text-align:center;"></div>
                     </div>
+                    <button id="floatingHighlightBtn">Highlight</button>
                     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
                     <script>
                       (async () => {{
-                        try {{
-                          const VIEW_MODE = "{view_mode}";
-                          pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+                        const VIEW_MODE = "{view_mode}";
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
 
-                          const pdfData = "data:application/pdf;base64,{base64_pdf}";
-                          console.log("Loading PDF with data length:", pdfData.length);
-                          
-                          const pdf = await pdfjsLib.getDocument(pdfData).promise;
-                          console.log("PDF loaded successfully, pages:", pdf.numPages);
+                        const pdfUrl = "{pdf_data_url}";
+                        const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
 
                         const canvas = document.getElementById('the-canvas');
                         const ctx = canvas.getContext('2d');
@@ -118,6 +107,8 @@ if uploaded_file is not None:
                         const pageLayer = document.getElementById('page-layer');
                         const textLayerDiv = document.getElementById('text-layer');
                         const highlightLayerDiv = document.getElementById('highlight-layer');
+                        const selHighlightBtn = document.getElementById('sel_highlight');
+                        const floatingBtn = document.getElementById('floatingHighlightBtn');
 
                         let currentPage = 1;
                         let scale = 1.2;
@@ -131,6 +122,30 @@ if uploaded_file is not None:
                           canvasEl.width = Math.floor(viewport.width * outputScale);
                           canvasEl.height = Math.floor(viewport.height * outputScale);
                           return outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+                        }}
+
+                        async function highlightSelectedText(pageNum, viewport, layerDiv) {{
+                          const sel = window.getSelection();
+                          if (!sel.rangeCount) return;
+                          const selectedText = sel.toString().trim();
+                          if (!selectedText) return;
+
+                          const range = sel.getRangeAt(0);
+                          const rects = range.getClientRects();
+                          const containerRect = layerDiv.getBoundingClientRect();
+                          
+                          for (let i = 0; i < rects.length; i++) {{
+                            const rect = rects[i];
+                            const highlightDiv = document.createElement('div');
+                            highlightDiv.className = 'highlightOverlay';
+                            highlightDiv.style.left = (rect.left - containerRect.left) + 'px';
+                            highlightDiv.style.top = (rect.top - containerRect.top) + 'px';
+                            highlightDiv.style.width = rect.width + 'px';
+                            highlightDiv.style.height = rect.height + 'px';
+                            layerDiv.appendChild(highlightDiv);
+                          }}
+                          
+                          sel.removeAllRanges();
                         }}
 
                         async function renderPagePaged(num) {{
@@ -187,6 +202,10 @@ if uploaded_file is not None:
                             renderPagePaged(currentPage);
                           }};
 
+                          selHighlightBtn.onclick = () => {{
+                            highlightSelectedText(currentPage, currentViewport, highlightLayerDiv);
+                          }};
+
                           renderPagePaged(currentPage);
                         }} else {{
                           pagerControls.style.display = "none";
@@ -198,6 +217,8 @@ if uploaded_file is not None:
                           const firstPage = await pdf.getPage(1);
                           const v1 = firstPage.getViewport({{ scale: 1 }});
                           const fitScale = containerWidth > 0 ? (containerWidth / v1.width) : 1.2;
+
+                          const pageData = [];
 
                           for (let p = 1; p <= pdf.numPages; p++) {{
                             const wrapper = document.createElement('div');
@@ -250,18 +271,67 @@ if uploaded_file is not None:
                               viewport: viewport,
                               textDivs: []
                             }});
+
+                            pageData.push({{ pageNum: p, viewport, highlightLayer }});
                           }}
-                        }}
-                        }} catch (error) {{
-                          console.error("PDF loading error:", error);
-                          document.getElementById('error-message').style.display = 'block';
-                          document.getElementById('error-message').textContent = 'Error loading PDF: ' + error.message;
+
+                          document.addEventListener('selectionchange', () => {{
+                            const sel = window.getSelection();
+                            if (sel && sel.toString().trim().length > 0) {{
+                              const range = sel.getRangeAt(0);
+                              const rect = range.getBoundingClientRect();
+                              floatingBtn.style.display = 'block';
+                              floatingBtn.style.left = (rect.left + window.scrollX) + 'px';
+                              floatingBtn.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+                            }} else {{
+                              floatingBtn.style.display = 'none';
+                            }}
+                          }});
+
+                          floatingBtn.onclick = async () => {{
+                            const sel = window.getSelection();
+                            if (!sel.rangeCount) return;
+                            const selectedText = sel.toString().trim();
+                            if (!selectedText) return;
+
+                            const range = sel.getRangeAt(0);
+                            let targetPageNum = 1;
+                            let targetLayer = null;
+
+                            for (const pd of pageData) {{
+                              const wrapper = pd.highlightLayer.parentElement;
+                              if (wrapper.contains(range.commonAncestorContainer) || range.intersectsNode(wrapper)) {{
+                                targetPageNum = pd.pageNum;
+                                targetLayer = pd.highlightLayer;
+                                break;
+                              }}
+                            }}
+
+                            if (targetLayer) {{
+                              const rects = range.getClientRects();
+                              const containerRect = targetLayer.getBoundingClientRect();
+                              
+                              for (let i = 0; i < rects.length; i++) {{
+                                const rect = rects[i];
+                                const highlightDiv = document.createElement('div');
+                                highlightDiv.className = 'highlightOverlay';
+                                highlightDiv.style.left = (rect.left - containerRect.left) + 'px';
+                                highlightDiv.style.top = (rect.top - containerRect.top) + 'px';
+                                highlightDiv.style.width = rect.width + 'px';
+                                highlightDiv.style.height = rect.height + 'px';
+                                targetLayer.appendChild(highlightDiv);
+                              }}
+                            }}
+
+                            sel.removeAllRanges();
+                            floatingBtn.style.display = 'none';
+                          }};
                         }}
                       }})();
                     </script>
-                        """
-                        
-                        st.components.v1.html(pdf_html, height=700)
+                    """
+                    
+                    st.components.v1.html(pdf_html, height=700)
                     
                 except Exception as e:
                     st.error(f"Error displaying PDF: {e}")
