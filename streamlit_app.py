@@ -3,7 +3,7 @@ import time
 import json
 import streamlit as st
 import base64
-import fitz  # PyMuPDF
+import fitz  
 import re
 from pathlib import Path
 from string import Template
@@ -11,7 +11,7 @@ from string import Template
 st.set_page_config(page_title="CLAWS", layout="wide")
 st.title("CLAWS - Clause Law Assessment Workflow System")
 
-# Import modules
+
 try:
     from app.parser import parse_pdf
     from app.qa_system import parse_question, get_policy_explanation, retrieve_clause, generate_answer, generate_contract_summary
@@ -36,7 +36,7 @@ with col2:
 st.sidebar.header("📄 Upload Your Own PDF")
 uploaded = st.sidebar.file_uploader("Choose a contract PDF", type=["pdf"])
 
-# Handle example PDFs or uploaded PDFs
+
 pdf_data = None
 pdf_name = None
 
@@ -113,7 +113,7 @@ if pdf_data is not None:
         with col2:
             st.metric("Clauses Found", f"{len(clauses)}")
         
-        # Show a preview of detected clauses
+       
         if clauses:
             st.markdown("**Detected Clauses Preview:**")
             clause_types = list(set([clause.get('type', 'Unknown') for clause in clauses]))
@@ -123,7 +123,7 @@ if pdf_data is not None:
         st.error(f"Could not display PDF: {e}")
         st.info("You can download the PDF using the button above to view it locally.")
 
-    # Q&A Section (Second)
+   
     st.subheader("❓ Ask Questions About This Contract")
     
     question = st.text_input("Ask ANY question about this contract:", placeholder="e.g., What is this contract about? What are the payment terms? Who are the parties? What are the risks?")
