@@ -1,0 +1,16 @@
+CLAWS: Learning
+
+
+1. First try creating a skeleton of the backend APIs for proper testing
+2. Instead of directly applying something(like PyMuPdf), one can instead use a dummy(stub parsing) for quick testing
+3. Keep two paths, one that is editable in env and one that is default
+4. While pdf validation, CPU- heavy tasks should be done in background threads. Another important thing is that just naming a function ‘async’ doesnt enable it to do other tasks. 
+5.  ‘_fnname’ Indicates the function is meant to be internal or private
+6. Daemon threads run in the background(for background work you don’t need to finish)
+7. Error Handling: Graceful fallbacks when AI models fail (rule-based responses when LLM unavailable)
+8.  PyMuPDF is superior for PDF highlighting
+9. Large models (DialoGPT) can cause segmentation faults and memory issues
+10. DistilGPT-2 gave incoherent responses; DialoGPT-medium was much better for Q&A
+11. iframe PDF viewers get blocked by Chromium security policies
+12.  Create simple tests that don't trigger heavy ML model loading
+13. Different platforms have different limitations (Streamlit Cloud vs Railway)
