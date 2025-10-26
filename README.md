@@ -43,6 +43,13 @@ CLAWS is an advanced legal document analysis system that automatically detects, 
 - **Downloadable Highlighted PDFs** with all annotations
 - **Multi-page Document** support
 
+### 🎯 **Example Contracts**
+
+- **Instant Demo** with pre-loaded contract examples
+- **One-Click Upload** - no downloading required
+- **Co-Branding Agreement** example for testing
+- **Affiliate Agreement** example for testing
+
 ## 🎯 Key Capabilities
 
 - **16 Legal Clause Types** automatically detected and highlighted
@@ -51,6 +58,7 @@ CLAWS is an advanced legal document analysis system that automatically detects, 
 - **Intelligent Q&A System** using RoBERTa legal model with multi-context search
 - **Question-Specific Analysis** for payment, termination, liability, confidentiality
 - **Keyword-Based Retrieval** for comprehensive contract understanding
+- **Example Contracts** for instant demo and testing
 
 ## 🏗️ Architecture
 
@@ -100,8 +108,10 @@ graph TB
 ### **Option 1: Use Online Demo**
 
 1. Visit **[claws-legal.streamlit.app](https://claws-legal.streamlit.app)**
-2. Upload a PDF contract
-3. Download highlighted PDF and ask questions!
+2. **Try Example Contracts** - Click "Co-Branding Agreement" or "Affiliate Agreement" buttons
+3. **Upload Your Own** - Use the file uploader for your contracts
+4. **Ask Questions** - Use the Q&A system to analyze contracts
+5. **Download Results** - Get highlighted PDFs with all detected clauses
 
 ### **Option 2: Local Development**
 
