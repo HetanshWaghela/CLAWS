@@ -10,12 +10,10 @@ from string import Template
 
 st.set_page_config(page_title="CLAWS", layout="wide")
 
-# Dark theme toggle
-col1, col2 = st.columns([1, 4])
-with col1:
-    dark_mode = st.toggle("🌙", help="Toggle dark mode")
-with col2:
-    st.title("CLAWS - Clause Law Assessment Workflow System")
+# Dark theme toggle at the top
+dark_mode = st.toggle("🌙 Dark Mode", help="Toggle dark mode", key="dark_mode_toggle")
+
+st.title("CLAWS - Clause Law Assessment Workflow System")
 
 # Apply dark theme CSS
 if dark_mode:
@@ -63,10 +61,23 @@ if dark_mode:
     
     /* File uploader */
     .stFileUploader {
-        background-color: #2d2d2d;
-        border: 1px solid #555;
+        background-color: #2d2d2d !important;
+        border: 1px solid #555 !important;
     }
     .stFileUploader label {
+        color: #fafafa !important;
+    }
+    .stFileUploader .uploadedFile {
+        background-color: #2d2d2d !important;
+        color: #fafafa !important;
+    }
+    .stFileUploader .uploadedFile .file-name {
+        color: #fafafa !important;
+    }
+    .stFileUploader .uploadedFile .file-size {
+        color: #cccccc !important;
+    }
+    .stFileUploader .uploadedFile .file-actions {
         color: #fafafa !important;
     }
     
