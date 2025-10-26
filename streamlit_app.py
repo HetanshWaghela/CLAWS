@@ -42,13 +42,15 @@ if uploaded is not None:
                 # Use highlighted PDF for display
                 with open(highlighted_path, "rb") as f:
                     highlighted_pdf_data = f.read()
-                os.remove(highlighted_path)  # Clean up
+                # Don't delete yet - keep for Q&A
             else:
                 # Fallback to original
                 highlighted_pdf_data = uploaded.getvalue()
             
-            # Clean up temp file
-            os.remove(temp_path)
+            # Store temp files for later cleanup
+            temp_files = [temp_path]
+            if os.path.exists(highlighted_path):
+                temp_files.append(highlighted_path)
             
             st.success(f"✅ Analysis complete! Found {len(clauses)} clauses.")
             
@@ -233,3 +235,12 @@ if uploaded is not None:
 
 else:
     st.info("📁 Upload a PDF from the sidebar to start analysis.")
+
+# Clean up temp files at the end
+if 'temp_files' in locals():
+    for temp_file in temp_files:
+        if os.path.exists(temp_file):
+            try:
+                os.remove(temp_file)
+            except:
+                pass  # Ignore cleanup errors

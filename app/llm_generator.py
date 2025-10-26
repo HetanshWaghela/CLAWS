@@ -13,20 +13,31 @@ class LLMGenerator:
             print("Loading RoBERTa legal Q&A model...")
             
             from transformers import pipeline, AutoTokenizer, AutoModelForQuestionAnswering
+            import torch
             
-            # Use pipeline for easier question-answering
-            self.pipeline = pipeline(
-                "question-answering", 
-                model="Rakib/roberta-base-on-cuad",
-                device=0 if self.device == "cuda" else -1
+            # Load with optimizations for faster loading
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                "Rakib/roberta-base-on-cuad",
+                use_fast=True  # Use fast tokenizer
             )
             
-            # Also load model directly for more control if needed
-            self.tokenizer = AutoTokenizer.from_pretrained("Rakib/roberta-base-on-cuad")
-            self.model = AutoModelForQuestionAnswering.from_pretrained("Rakib/roberta-base-on-cuad")
+            self.model = AutoModelForQuestionAnswering.from_pretrained(
+                "Rakib/roberta-base-on-cuad",
+                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,  # Use half precision on GPU
+                low_cpu_mem_usage=True  # Reduce memory usage
+            )
             
             self.model.to(self.device)
             self.model.eval()
+            
+            # Create pipeline after model is loaded
+            self.pipeline = pipeline(
+                "question-answering", 
+                model=self.model,
+                tokenizer=self.tokenizer,
+                device=0 if self.device == "cuda" else -1
+            )
+            
             print("RoBERTa legal Q&A model loaded successfully")
             return True
         except Exception as e:
