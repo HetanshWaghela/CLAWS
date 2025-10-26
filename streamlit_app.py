@@ -27,16 +27,17 @@ uploaded = st.sidebar.file_uploader("Choose a contract PDF", type=["pdf"])
 st.sidebar.markdown("---")
 st.sidebar.subheader("📋 Example Contracts")
 
-# List example PDFs
+# List example PDFs - use absolute paths
+base_dir = os.path.dirname(os.path.abspath(__file__))
 example_pdfs = [
     {
         "name": "Co-Branding Agreement",
-        "file": "examples/StampscomInc_20001114_10-Q_EX-10.47_2631630_EX-10.47_Co-Branding Agreement.pdf",
+        "file": os.path.join(base_dir, "examples", "StampscomInc_20001114_10-Q_EX-10.47_2631630_EX-10.47_Co-Branding Agreement.pdf"),
         "description": "Stamps.com Co-Branding Agreement"
     },
     {
         "name": "Affiliate Agreement", 
-        "file": "examples/UsioInc_20040428_SB-2_EX-10.11_1723988_EX-10.11_Affiliate Agreement 2.pdf",
+        "file": os.path.join(base_dir, "examples", "UsioInc_20040428_SB-2_EX-10.11_1723988_EX-10.11_Affiliate Agreement 2.pdf"),
         "description": "Usio Inc. Affiliate Agreement"
     }
 ]
@@ -44,6 +45,10 @@ example_pdfs = [
 # Check which files exist and show them
 available_pdfs = []
 for pdf in example_pdfs:
+    # Debug info
+    st.sidebar.text(f"Looking for: {pdf['file']}")
+    st.sidebar.text(f"Exists: {os.path.exists(pdf['file'])}")
+    
     if os.path.exists(pdf["file"]):
         available_pdfs.append(pdf)
         with open(pdf["file"], "rb") as f:
