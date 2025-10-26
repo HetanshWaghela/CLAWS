@@ -15,22 +15,22 @@ class LLMGenerator:
             from transformers import pipeline, AutoTokenizer, AutoModelForQuestionAnswering
             import torch
             
-            # Load with optimizations for faster loading
+            
             self.tokenizer = AutoTokenizer.from_pretrained(
                 "Rakib/roberta-base-on-cuad",
-                use_fast=True  # Use fast tokenizer
+                use_fast=True 
             )
             
             self.model = AutoModelForQuestionAnswering.from_pretrained(
                 "Rakib/roberta-base-on-cuad",
-                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,  # Use half precision on GPU
-                low_cpu_mem_usage=True  # Reduce memory usage
+                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32, 
+                low_cpu_mem_usage=True  # 
             )
             
             self.model.to(self.device)
             self.model.eval()
             
-            # Create pipeline after model is loaded
+            
             self.pipeline = pipeline(
                 "question-answering", 
                 model=self.model,
@@ -53,14 +53,13 @@ class LLMGenerator:
                 return "No explanation available"
         
         try:
-            # Create multiple context strategies
+           
             contexts = self._create_multiple_contexts(clause_text, question)
             
             best_answer = None
             best_score = 0
             best_method = ""
-            
-            # Try each context strategy
+         
             for context_name, context_text in contexts.items():
                 if not context_text.strip():
                     continue
@@ -76,8 +75,8 @@ class LLMGenerator:
                     if result['answer'] and result['answer'].strip() != "":
                         score = result.get('score', 0)
                         
-                        # Use lower threshold for acceptance
-                        if score > 0.01:  # Very low threshold
+                       
+                        if score > 0.01: 
                             if score > best_score:
                                 best_answer = result['answer']
                                 best_score = score
@@ -87,9 +86,9 @@ class LLMGenerator:
                     print(f"Error with {context_name}: {e}")
                     continue
             
-            # If we found an answer, return it
+         
             if best_answer:
-                # Format response based on confidence
+               
                 if best_score > 0.7:
                     response = f"**High Confidence Answer:** {best_answer}"
                 elif best_score > 0.3:
@@ -118,15 +117,15 @@ class LLMGenerator:
         contexts = {}
         question_lower = question.lower()
         
-        # Strategy 1: Full document context (truncated)
-        contexts['full_document'] = full_text[:4000]  # Limit to avoid token limits
+    
+        contexts['full_document'] = full_text[:4000] 
         
-        # Strategy 2: Relevant clauses only
+        
         relevant_clauses = self._find_relevant_clauses(full_text, question)
         if relevant_clauses:
             contexts['relevant_clauses'] = " ".join(relevant_clauses[:5])
         
-        # Strategy 3: Question-specific context
+ 
         if 'payment' in question_lower:
             contexts['payment_focused'] = self._extract_payment_context(full_text)
         elif 'termination' in question_lower:
@@ -138,12 +137,12 @@ class LLMGenerator:
         elif 'what is' in question_lower or 'about' in question_lower:
             contexts['general_summary'] = self._create_summary_context(full_text)
         
-        # Strategy 4: First part of document (usually contains key info)
+       
         sentences = re.split(r'[.!?]+', full_text)
         sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
         contexts['document_start'] = " ".join(sentences[:10])
         
-        # Strategy 5: All sentences containing question keywords
+
         question_words = [w for w in question_lower.split() if len(w) > 3]
         keyword_sentences = []
         for sentence in sentences:
@@ -219,7 +218,7 @@ class LLMGenerator:
         import re
         question_lower = question.lower()
         
-        # Extract sentences containing question keywords
+
         sentences = re.split(r'[.!?]+', full_text)
         relevant_sentences = []
         
@@ -231,7 +230,7 @@ class LLMGenerator:
                 relevant_sentences.append(sentence.strip())
         
         if relevant_sentences:
-            # Return the most relevant sentences
+         
             return " ".join(relevant_sentences[:3])
         
         return None
@@ -240,48 +239,42 @@ class LLMGenerator:
         """Create a summary context for general questions"""
         import re
         
-        # Extract key sentences
+      
         sentences = re.split(r'[.!?]+', full_text)
         sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
         
-        # Look for key contract elements
+    
         key_phrases = []
-        
-        # Find document name/title
+     
         for sentence in sentences[:10]:
             if any(word in sentence.lower() for word in ['agreement', 'contract', 'terms', 'conditions']):
                 key_phrases.append(sentence)
                 break
-        
-        # Find parties
+    
         for sentence in sentences:
             if any(word in sentence.lower() for word in ['party', 'parties', 'between', 'company', 'corporation']):
                 key_phrases.append(sentence)
                 if len(key_phrases) >= 2:
                     break
-        
-        # Find purpose/scope
+ 
         for sentence in sentences:
             if any(word in sentence.lower() for word in ['purpose', 'scope', 'objectives', 'services', 'products']):
                 key_phrases.append(sentence)
                 break
-        
-        # Combine key phrases
+  
         if key_phrases:
-            return " ".join(key_phrases[:5])  # Use top 5 key phrases
+            return " ".join(key_phrases[:5])  
         else:
-            # Fallback: use first few sentences
+           
             return " ".join(sentences[:3])
     
     def _find_relevant_clauses(self, full_text, question):
         """Find the most relevant clauses for the question using keyword matching"""
         import re
-        
-        # Split text into sentences/paragraphs
+
         sentences = re.split(r'[.!?]+', full_text)
         sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
-        
-        # Extract keywords from question
+
         question_lower = question.lower()
         keywords = []
         
@@ -300,21 +293,17 @@ class LLMGenerator:
             'breach': ['breach', 'violate', 'default', 'non-compliance', 'failure'],
             'remedy': ['remedy', 'damages', 'injunction', 'specific performance', 'relief']
         }
-        
-        # Find relevant terms based on question type
+    
         for term, variations in legal_terms.items():
             if any(v in question_lower for v in variations):
                 keywords.extend(variations)
-        
-        # Add general keywords from question (more aggressive)
-        question_words = [w for w in question_lower.split() if len(w) > 2]  # Lower threshold
+  
+        question_words = [w for w in question_lower.split() if len(w) > 2]  
         keywords.extend(question_words)
-        
-        # For "what is" questions, add general contract terms
+      
         if "what is" in question_lower or "about" in question_lower:
             keywords.extend(['agreement', 'contract', 'document', 'terms', 'conditions', 'purpose'])
-        
-        # Score sentences based on keyword matches
+    
         scored_sentences = []
         for sentence in sentences:
             score = 0
@@ -323,23 +312,23 @@ class LLMGenerator:
             for keyword in keywords:
                 if keyword in sentence_lower:
                     score += 1
-                    # Bonus for exact word matches
+               
                     if keyword in sentence_lower.split():
                         score += 2
-                    # Bonus for beginning of sentence
+                   
                     if sentence_lower.startswith(keyword):
                         score += 1
             
-            # Special scoring for contract identification
+       
             if any(word in sentence_lower for word in ['agreement', 'contract', 'terms', 'conditions']):
                 score += 3
             
             if score > 0:
                 scored_sentences.append((score, sentence))
         
-        # Sort by relevance and return top matches
+    
         scored_sentences.sort(key=lambda x: x[0], reverse=True)
-        return [sentence for score, sentence in scored_sentences[:8]]  # Return more clauses
+        return [sentence for score, sentence in scored_sentences[:8]]  
 
 _llm_generator = None
 

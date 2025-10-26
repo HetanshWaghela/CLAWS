@@ -369,7 +369,7 @@ def explain_clause(request: QARequest):
 @app.on_event("startup")
 def _start_worker():
     print("Starting CLAWS with rule-based legal detection")
-    print("DialoGPT will load on first use")
+    print("RoBERTa legal Q&A model will load on first use")
     t= Thread(target= _worker, daemon= True)
     t.start()
 

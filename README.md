@@ -33,7 +33,7 @@ CLAWS is an advanced legal document analysis system that automatically detects, 
 
 - **Natural Language Questions** about contract terms
 - **Intelligent Answer Generation** using RoBERTa legal Q&A model
-- **RAG-Based Responses** with multiple context strategies
+- **Multi-Context Search** with keyword-based retrieval strategies
 - **Question-Specific Analysis** for payment, termination, liability, etc.
 
 ### 📄 **Advanced PDF Processing**
@@ -48,9 +48,9 @@ CLAWS is an advanced legal document analysis system that automatically detects, 
 - **16 Legal Clause Types** automatically detected and highlighted
 - **6 Critical Risk Categories** with detailed analysis and recommendations
 - **Real-time PDF Processing** with instant visual feedback
-- **Intelligent Q&A System** using RoBERTa legal model with RAG
+- **Intelligent Q&A System** using RoBERTa legal model with multi-context search
 - **Question-Specific Analysis** for payment, termination, liability, confidentiality
-- **Multi-Context Strategies** for comprehensive contract understanding
+- **Keyword-Based Retrieval** for comprehensive contract understanding
 
 ## 🏗️ Architecture
 
@@ -63,7 +63,7 @@ graph TB
     E --> F[PDF Highlighting]
     F --> G[Streamlit UI]
   
-    H[User Question] --> I[Multi-Context RAG]
+    H[User Question] --> I[Multi-Context Search]
     I --> J[RoBERTa Legal Q&A]
     J --> K[Answer Generation]
     K --> L[Answer Display]
@@ -80,7 +80,7 @@ graph TB
 - **FastAPI** - High-performance API framework (optional)
 - **PyMuPDF** - Advanced PDF processing and highlighting
 - **Transformers** - RoBERTa legal Q&A model for contract analysis
-- **Regex Patterns** - Intelligent clause detection
+- **Regex Patterns** - Pattern-based clause detection
 
 ### **Frontend**
 
@@ -91,7 +91,7 @@ graph TB
 ### **AI & ML**
 
 - **RoBERTa Legal Q&A** - Specialized legal contract analysis model
-- **RAG System** - Multiple context strategies for better answers
+- **Multi-Context Search** - Keyword-based retrieval strategies
 - **Pattern Matching** - Rule-based clause detection
 - **Knowledge Base** - Legal risk assessment database
 
