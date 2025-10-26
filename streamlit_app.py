@@ -41,8 +41,11 @@ example_pdfs = [
     }
 ]
 
+# Check which files exist and show them
+available_pdfs = []
 for pdf in example_pdfs:
     if os.path.exists(pdf["file"]):
+        available_pdfs.append(pdf)
         with open(pdf["file"], "rb") as f:
             pdf_data = f.read()
         
@@ -53,20 +56,29 @@ for pdf in example_pdfs:
             mime="application/pdf",
             help=pdf["description"]
         )
+    else:
+        st.sidebar.error(f"❌ {pdf['name']} not found")
 
 # Quick test section
 st.sidebar.markdown("---")
 st.sidebar.subheader("🚀 Quick Test")
 
-if st.sidebar.button("Test with Co-Branding Agreement"):
-    example_file = "examples/StampscomInc_20001114_10-Q_EX-10.47_2631630_EX-10.47_Co-Branding Agreement.pdf"
-    if os.path.exists(example_file):
-        with open(example_file, "rb") as f:
-            uploaded = type('obj', (object,), {
-                'name': 'Co-Branding Agreement.pdf',
-                'getvalue': lambda: f.read()
-            })()
+# Use session state to handle file loading
+if 'example_loaded' not in st.session_state:
+    st.session_state.example_loaded = None
+
+for i, pdf in enumerate(available_pdfs):
+    if st.sidebar.button(f"Test with {pdf['name']}", key=f"test_{i}"):
+        st.session_state.example_loaded = pdf['file']
         st.rerun()
+
+# Load example file if selected
+if st.session_state.example_loaded and os.path.exists(st.session_state.example_loaded):
+    with open(st.session_state.example_loaded, "rb") as f:
+        uploaded = type('obj', (object,), {
+            'name': os.path.basename(st.session_state.example_loaded),
+            'getvalue': lambda: f.read()
+        })()
 
 if uploaded is not None:
     st.success(f"📄 Uploaded: {uploaded.name}")
