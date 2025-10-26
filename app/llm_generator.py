@@ -53,84 +53,188 @@ class LLMGenerator:
                 return "No explanation available"
         
         try:
-            # RAG-based approach: Find most relevant clauses first
-            relevant_clauses = self._find_relevant_clauses(clause_text, question)
+            # Create multiple context strategies
+            contexts = self._create_multiple_contexts(clause_text, question)
             
-            if not relevant_clauses:
-                return "No relevant information found in the contract for this question."
+            best_answer = None
+            best_score = 0
+            best_method = ""
             
-            # Try multiple approaches for better answers
-            answers = []
+            # Try each context strategy
+            for context_name, context_text in contexts.items():
+                if not context_text.strip():
+                    continue
+                    
+                try:
+                    result = self.pipeline(
+                        question=question,
+                        context=context_text,
+                        max_answer_len=400,
+                        handle_impossible_answer=True
+                    )
+                    
+                    if result['answer'] and result['answer'].strip() != "":
+                        score = result.get('score', 0)
+                        
+                        # Use lower threshold for acceptance
+                        if score > 0.01:  # Very low threshold
+                            if score > best_score:
+                                best_answer = result['answer']
+                                best_score = score
+                                best_method = context_name
+                                
+                except Exception as e:
+                    print(f"Error with {context_name}: {e}")
+                    continue
             
-            # Approach 1: Use the most relevant clause
-            best_context = relevant_clauses[0]
-            result1 = self.pipeline(
-                question=question,
-                context=best_context,
-                max_answer_len=200,
-                handle_impossible_answer=True
-            )
-            
-            if result1['answer'] and result1['answer'] != "" and result1['score'] > 0.1:
-                answers.append((result1['answer'], result1['score'], "Primary"))
-            
-            # Approach 2: Use multiple relevant clauses combined
-            if len(relevant_clauses) > 1:
-                combined_context = " ".join(relevant_clauses[:3])  # Use top 3
-                result2 = self.pipeline(
-                    question=question,
-                    context=combined_context,
-                    max_answer_len=300,
-                    handle_impossible_answer=True
-                )
-                
-                if result2['answer'] and result2['answer'] != "" and result2['score'] > 0.1:
-                    answers.append((result2['answer'], result2['score'], "Combined"))
-            
-            # Approach 3: For general questions, try with document summary
-            if "what is" in question.lower() or "about" in question.lower():
-                # Create a summary context
-                summary_context = self._create_summary_context(clause_text)
-                result3 = self.pipeline(
-                    question=question,
-                    context=summary_context,
-                    max_answer_len=400,
-                    handle_impossible_answer=True
-                )
-                
-                if result3['answer'] and result3['answer'] != "" and result3['score'] > 0.05:
-                    answers.append((result3['answer'], result3['score'], "Summary"))
-            
-            # Choose the best answer
-            if answers:
-                # Sort by confidence score
-                answers.sort(key=lambda x: x[1], reverse=True)
-                best_answer, best_score, method = answers[0]
-                
-                # Format response
+            # If we found an answer, return it
+            if best_answer:
+                # Format response based on confidence
                 if best_score > 0.7:
                     response = f"**High Confidence Answer:** {best_answer}"
-                elif best_score > 0.4:
+                elif best_score > 0.3:
                     response = f"**Answer:** {best_answer}"
                 else:
                     response = f"**Answer (Low Confidence):** {best_answer}"
                 
-                # Add method info for debugging
-                response += f"\n\n*Source: {method} analysis*"
-                
-                # Add additional relevant clauses if available
-                if len(relevant_clauses) > 1:
-                    response += f"\n\n**Additional Relevant Information:**"
-                    for i, clause in enumerate(relevant_clauses[1:3], 1):
-                        response += f"\n- {clause[:150]}..."
-                
+                response += f"\n\n*Source: {best_method} analysis (confidence: {best_score:.2f})*"
                 return response
-            else:
-                return "No specific answer found in the contract text."
+            
+            # If no answer found, try to extract relevant information manually
+            relevant_info = self._extract_relevant_info_manually(clause_text, question)
+            if relevant_info:
+                return f"**Answer:** {relevant_info}\n\n*Source: Manual extraction*"
+            
+            return "I couldn't find specific information about your question in this contract. The contract may not contain details about this topic, or the information might be worded differently than expected."
                 
         except Exception as e:
             print(f"LLM generation error: {e}")
             return "No explanation available"
+    
+    def _create_multiple_contexts(self, full_text, question):
+        """Create multiple context strategies for better answer finding"""
+        import re
+        
+        contexts = {}
+        question_lower = question.lower()
+        
+        # Strategy 1: Full document context (truncated)
+        contexts['full_document'] = full_text[:4000]  # Limit to avoid token limits
+        
+        # Strategy 2: Relevant clauses only
+        relevant_clauses = self._find_relevant_clauses(full_text, question)
+        if relevant_clauses:
+            contexts['relevant_clauses'] = " ".join(relevant_clauses[:5])
+        
+        # Strategy 3: Question-specific context
+        if 'payment' in question_lower:
+            contexts['payment_focused'] = self._extract_payment_context(full_text)
+        elif 'termination' in question_lower:
+            contexts['termination_focused'] = self._extract_termination_context(full_text)
+        elif 'liability' in question_lower or 'damage' in question_lower:
+            contexts['liability_focused'] = self._extract_liability_context(full_text)
+        elif 'confidential' in question_lower:
+            contexts['confidentiality_focused'] = self._extract_confidentiality_context(full_text)
+        elif 'what is' in question_lower or 'about' in question_lower:
+            contexts['general_summary'] = self._create_summary_context(full_text)
+        
+        # Strategy 4: First part of document (usually contains key info)
+        sentences = re.split(r'[.!?]+', full_text)
+        sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
+        contexts['document_start'] = " ".join(sentences[:10])
+        
+        # Strategy 5: All sentences containing question keywords
+        question_words = [w for w in question_lower.split() if len(w) > 3]
+        keyword_sentences = []
+        for sentence in sentences:
+            if any(word in sentence.lower() for word in question_words):
+                keyword_sentences.append(sentence)
+        if keyword_sentences:
+            contexts['keyword_matches'] = " ".join(keyword_sentences[:8])
+        
+        return contexts
+    
+    def _extract_payment_context(self, full_text):
+        """Extract payment-related information"""
+        import re
+        sentences = re.split(r'[.!?]+', full_text)
+        payment_sentences = []
+        
+        payment_keywords = ['payment', 'pay', 'fee', 'cost', 'price', 'compensation', 'remuneration', 
+                           'amount', 'dollar', 'currency', 'invoice', 'billing', 'charge']
+        
+        for sentence in sentences:
+            if any(keyword in sentence.lower() for keyword in payment_keywords):
+                payment_sentences.append(sentence)
+        
+        return " ".join(payment_sentences[:10])
+    
+    def _extract_termination_context(self, full_text):
+        """Extract termination-related information"""
+        import re
+        sentences = re.split(r'[.!?]+', full_text)
+        termination_sentences = []
+        
+        termination_keywords = ['termination', 'terminate', 'end', 'expire', 'cancel', 'duration', 
+                               'period', 'term', 'validity']
+        
+        for sentence in sentences:
+            if any(keyword in sentence.lower() for keyword in termination_keywords):
+                termination_sentences.append(sentence)
+        
+        return " ".join(termination_sentences[:10])
+    
+    def _extract_liability_context(self, full_text):
+        """Extract liability-related information"""
+        import re
+        sentences = re.split(r'[.!?]+', full_text)
+        liability_sentences = []
+        
+        liability_keywords = ['liability', 'liable', 'responsible', 'damages', 'indemnify', 
+                             'indemnification', 'hold harmless', 'defend', 'breach']
+        
+        for sentence in sentences:
+            if any(keyword in sentence.lower() for keyword in liability_keywords):
+                liability_sentences.append(sentence)
+        
+        return " ".join(liability_sentences[:10])
+    
+    def _extract_confidentiality_context(self, full_text):
+        """Extract confidentiality-related information"""
+        import re
+        sentences = re.split(r'[.!?]+', full_text)
+        confidentiality_sentences = []
+        
+        confidentiality_keywords = ['confidential', 'secret', 'proprietary', 'non-disclosure', 
+                                   'privacy', 'information', 'data']
+        
+        for sentence in sentences:
+            if any(keyword in sentence.lower() for keyword in confidentiality_keywords):
+                confidentiality_sentences.append(sentence)
+        
+        return " ".join(confidentiality_sentences[:10])
+    
+    def _extract_relevant_info_manually(self, full_text, question):
+        """Manually extract relevant information when AI fails"""
+        import re
+        question_lower = question.lower()
+        
+        # Extract sentences containing question keywords
+        sentences = re.split(r'[.!?]+', full_text)
+        relevant_sentences = []
+        
+        question_words = [w for w in question_lower.split() if len(w) > 3]
+        
+        for sentence in sentences:
+            sentence_lower = sentence.lower()
+            if any(word in sentence_lower for word in question_words):
+                relevant_sentences.append(sentence.strip())
+        
+        if relevant_sentences:
+            # Return the most relevant sentences
+            return " ".join(relevant_sentences[:3])
+        
+        return None
     
     def _create_summary_context(self, full_text):
         """Create a summary context for general questions"""
