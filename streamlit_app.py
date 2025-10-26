@@ -64,9 +64,8 @@ if uploaded_file is not None:
                             file_name=uploaded_file.name,
                             mime="application/pdf"
                         )
-                        return
-                    
-                    pdf_html = f"""
+                    else:
+                        pdf_html = f"""
                     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/web/pdf_viewer.css"/>
                     <style>
                       .textLayer {{ position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; opacity: 0.2; line-height: 1.0; }}
@@ -260,9 +259,9 @@ if uploaded_file is not None:
                         }}
                       }})();
                     </script>
-                    """
-                    
-                    st.components.v1.html(pdf_html, height=700)
+                        """
+                        
+                        st.components.v1.html(pdf_html, height=700)
                     
                 except Exception as e:
                     st.error(f"Error displaying PDF: {e}")
