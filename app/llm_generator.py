@@ -42,31 +42,102 @@ class LLMGenerator:
                 return "No explanation available"
         
         try:
-            # Use the question-answering pipeline
-            # The model expects context and question separately
+            # RAG-based approach: Find most relevant clauses first
+            relevant_clauses = self._find_relevant_clauses(clause_text, question)
+            
+            if not relevant_clauses:
+                return "No relevant information found in the contract for this question."
+            
+            # Use the most relevant clause as context
+            best_context = relevant_clauses[0]
+            
+            # Get answer from the legal Q&A model
             result = self.pipeline(
                 question=question,
-                context=clause_text,
-                max_answer_len=200,
+                context=best_context,
+                max_answer_len=300,
                 handle_impossible_answer=True
             )
             
             if result['answer'] and result['answer'] != "":
-                # Add confidence score if available
                 confidence = result.get('score', 0)
                 answer = result['answer']
                 
-                # Format the response nicely
-                if confidence > 0.5:
-                    return f"Based on the contract analysis: {answer}"
+                # Format with confidence and additional context
+                if confidence > 0.7:
+                    response = f"**High Confidence Answer:** {answer}"
+                elif confidence > 0.4:
+                    response = f"**Answer:** {answer}"
                 else:
-                    return f"Answer (low confidence): {answer}"
+                    response = f"**Answer (Low Confidence):** {answer}"
+                
+                # Add additional relevant clauses if available
+                if len(relevant_clauses) > 1:
+                    response += f"\n\n**Additional Relevant Information:**"
+                    for i, clause in enumerate(relevant_clauses[1:3], 1):  # Show up to 2 more
+                        response += f"\n- {clause[:150]}..."
+                
+                return response
             else:
                 return "No specific answer found in the contract text."
                 
         except Exception as e:
             print(f"LLM generation error: {e}")
             return "No explanation available"
+    
+    def _find_relevant_clauses(self, full_text, question):
+        """Find the most relevant clauses for the question using keyword matching"""
+        # Split text into sentences/paragraphs
+        import re
+        sentences = re.split(r'[.!?]+', full_text)
+        sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
+        
+        # Extract keywords from question
+        question_lower = question.lower()
+        keywords = []
+        
+        # Legal term mappings
+        legal_terms = {
+            'termination': ['terminate', 'end', 'expire', 'cancel', 'termination'],
+            'liability': ['liability', 'liable', 'responsible', 'damages', 'indemnify'],
+            'payment': ['payment', 'pay', 'fee', 'cost', 'price', 'compensation'],
+            'confidentiality': ['confidential', 'secret', 'proprietary', 'non-disclosure'],
+            'assignment': ['assign', 'transfer', 'delegate', 'assignment'],
+            'governing law': ['governing law', 'jurisdiction', 'legal', 'court'],
+            'force majeure': ['force majeure', 'act of god', 'unforeseeable'],
+            'warranty': ['warranty', 'warrant', 'guarantee', 'represent'],
+            'breach': ['breach', 'violate', 'default', 'non-compliance'],
+            'remedy': ['remedy', 'damages', 'injunction', 'specific performance']
+        }
+        
+        # Find relevant terms
+        for term, variations in legal_terms.items():
+            if any(v in question_lower for v in variations):
+                keywords.extend(variations)
+        
+        # Add general keywords from question
+        question_words = [w for w in question_lower.split() if len(w) > 3]
+        keywords.extend(question_words)
+        
+        # Score sentences based on keyword matches
+        scored_sentences = []
+        for sentence in sentences:
+            score = 0
+            sentence_lower = sentence.lower()
+            
+            for keyword in keywords:
+                if keyword in sentence_lower:
+                    score += 1
+                    # Bonus for exact matches
+                    if keyword in sentence_lower.split():
+                        score += 2
+            
+            if score > 0:
+                scored_sentences.append((score, sentence))
+        
+        # Sort by relevance and return top matches
+        scored_sentences.sort(key=lambda x: x[0], reverse=True)
+        return [sentence for score, sentence in scored_sentences[:5]]
 
 _llm_generator = None
 

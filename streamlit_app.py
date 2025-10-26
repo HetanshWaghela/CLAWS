@@ -138,14 +138,18 @@ if uploaded is not None:
                 
                 elif clause_type == 'GENERAL_QUESTION':
                     if clauses:
-                        context = "Contract clauses detected:\n"
-                        for clause in clauses[:10]:
-                            context += f"- {clause.get('type', 'Unknown')}: {clause.get('text', '')[:100]}...\n"
+                        # Create comprehensive context for RAG
+                        context_parts = []
+                        for clause in clauses:
+                            clause_type_name = clause.get('type', 'Unknown')
+                            clause_text = clause.get('text', '')
+                            context_parts.append(f"{clause_type_name}: {clause_text}")
+                        
+                        context = " ".join(context_parts)
                         
                         try:
                             llm_generator = get_llm_generator()
-                            prompt = f"{context}\n\nQuestion: {question}\n\nAnswer:"
-                            answer = llm_generator.generate_explanation(prompt, question)
+                            answer = llm_generator.generate_explanation(context, question)
                         except Exception as llm_error:
                             st.warning(f"LLM not available: {llm_error}")
                             answer = "I can help you understand this contract. Try asking about specific clauses like 'What are the risks with the assignment clause?' or 'Tell me about the termination clause.'"
