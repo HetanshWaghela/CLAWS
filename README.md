@@ -16,24 +16,28 @@ CLAWS is an advanced legal document analysis system that automatically detects, 
 ## ✨ Key Features
 
 ### 🔍 **Intelligent Clause Detection**
+
 - **16 Legal Clause Types** automatically detected using advanced regex patterns
 - **Real-time PDF Analysis** with instant highlighting
 - **Confidence Scoring** for each detected clause
 - **Page-level Precision** showing exact locations
 
 ### ⚖️ **Risk Assessment & Analysis**
+
 - **6 Critical Clause Types** with detailed risk explanations
 - **Severity Classification** (High/Medium/Low risk)
 - **Legal Knowledge Base** with policy explanations
 - **Risk Mitigation** recommendations
 
 ### 🤖 **AI-Powered Q&A System**
+
 - **Natural Language Questions** about contract terms
-- **Intelligent Answer Generation** using DialoGPT-medium
-- **Context-Aware Responses** based on detected clauses
-- **Fallback Rule-Based** explanations when AI unavailable
+- **Intelligent Answer Generation** using RoBERTa legal Q&A model
+- **RAG-Based Responses** with multiple context strategies
+- **Question-Specific Analysis** for payment, termination, liability, etc.
 
 ### 📄 **Advanced PDF Processing**
+
 - **PyMuPDF Integration** for high-quality text extraction
 - **Automatic Highlighting** of detected clauses
 - **Downloadable Highlighted PDFs** with all annotations
@@ -44,7 +48,9 @@ CLAWS is an advanced legal document analysis system that automatically detects, 
 - **16 Legal Clause Types** automatically detected and highlighted
 - **6 Critical Risk Categories** with detailed analysis and recommendations
 - **Real-time PDF Processing** with instant visual feedback
-- **AI-Powered Q&A** for natural language contract queries
+- **Intelligent Q&A System** using RoBERTa legal model with RAG
+- **Question-Specific Analysis** for payment, termination, liability, confidentiality
+- **Multi-Context Strategies** for comprehensive contract understanding
 
 ## 🏗️ Architecture
 
@@ -56,39 +62,43 @@ graph TB
     D --> E[Risk Assessment]
     E --> F[PDF Highlighting]
     F --> G[Streamlit UI]
-    
-    H[User Question] --> I[Question Parser]
-    I --> J[Clause Retrieval]
-    J --> K[Knowledge Base Lookup]
-    K --> L[LLM Generation]
-    L --> M[Answer Display]
-    
-    G --> N[Download Highlighted PDF]
-    G --> O[Q&A Interface]
-    G --> P[Clause Details]
+  
+    H[User Question] --> I[Multi-Context RAG]
+    I --> J[RoBERTa Legal Q&A]
+    J --> K[Answer Generation]
+    K --> L[Answer Display]
+  
+    G --> M[Download Highlighted PDF]
+    G --> N[Q&A Interface]
+    G --> O[Clause Details]
 ```
 
 ## 🛠️ Technology Stack
 
 ### **Backend**
-- **FastAPI** - High-performance API framework
+
+- **FastAPI** - High-performance API framework (optional)
 - **PyMuPDF** - Advanced PDF processing and highlighting
-- **Transformers** - HuggingFace DialoGPT-medium for Q&A
+- **Transformers** - RoBERTa legal Q&A model for contract analysis
 - **Regex Patterns** - Intelligent clause detection
 
 ### **Frontend**
+
 - **Streamlit** - Interactive web application
-- **Custom PDF Viewer** - Base64-encoded PDF display
+- **Native PDF Viewer** - Using streamlit[pdf] component
 - **Responsive Design** - Mobile-friendly interface
 
 ### **AI & ML**
-- **DialoGPT-medium** - Conversational AI for Q&A
+
+- **RoBERTa Legal Q&A** - Specialized legal contract analysis model
+- **RAG System** - Multiple context strategies for better answers
 - **Pattern Matching** - Rule-based clause detection
 - **Knowledge Base** - Legal risk assessment database
 
 ## 🚀 Quick Start
 
 ### **Option 1: Use Online Demo**
+
 1. Visit **[claws-legal.streamlit.app](https://claws-legal.streamlit.app)**
 2. Upload a PDF contract
 3. Download highlighted PDF and ask questions!
@@ -96,34 +106,40 @@ graph TB
 ### **Option 2: Local Development**
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/HetanshWaghela/CLAWS.git
    cd CLAWS
    ```
-
 2. **Create virtual environment**
+
    ```bash
    python -m venv claws_env
    source claws_env/bin/activate  # On Windows: claws_env\Scripts\activate
    ```
-
 3. **Install dependencies**
+
 ```bash
 pip install -r requirements.txt
 ```
 
 4. **Run the application**
+
 ```bash
+   # Option A: Standalone Streamlit app (Recommended)
+   streamlit run streamlit_app.py --server.port 8501
+   
+   # Option B: Separate frontend/backend
    # Backend (Terminal 1)
    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    
    # Frontend (Terminal 2)
    streamlit run ui/app.py --server.port 8501
-   ```
+```
 
 5. **Open in browser**
-   - Frontend: http://localhost:8501
-   - Backend API: http://localhost:8000
+   - Streamlit App: http://localhost:8501
+   - Backend API (if using separate): http://localhost:8000
 
 ## 📊 Performance Metrics
 
@@ -136,15 +152,18 @@ pip install -r requirements.txt
 ## 🔧 API Endpoints
 
 ### **Analysis**
+
 - `POST /analyze` - Upload and analyze PDF
 - `GET /result/{job_id}` - Get analysis results
 - `GET /pdf/{job_id}` - Download highlighted PDF
 
 ### **Q&A**
+
 - `POST /explain` - Ask questions about contracts
 - `GET /healthz` - Health check
 
 ### **Annotations**
+
 - `GET /annotations/{job_id}` - Get annotations
 - `POST /annotations/{job_id}` - Add/update annotations
 
@@ -152,32 +171,36 @@ pip install -r requirements.txt
 
 ```
 CLAWS/
-├── app/                    # Backend application
-│   ├── main.py            # FastAPI application
+├── app/                    # Backend modules
+│   ├── main.py            # FastAPI application (optional)
 │   ├── parser.py          # PDF parsing and clause detection
 │   ├── qa_system.py       # Q&A system logic
-│   ├── llm_generator.py   # AI model integration
+│   ├── llm_generator.py   # RoBERTa legal Q&A model
 │   └── knowledge_base.py  # Legal knowledge database
-├── ui/                    # Frontend application
+├── ui/                    # Separate frontend (optional)
 │   └── app.py            # Streamlit interface
-├── streamlit_app.py       # Standalone Streamlit app
+├── streamlit_app.py       # Main standalone Streamlit app
 ├── requirements.txt       # Python dependencies
+├── .streamlit/           # Streamlit configuration
 └── README.md             # This file
 ```
 
 ## 🎯 Use Cases
 
 ### **Legal Professionals**
+
 - **Contract Review** - Quickly identify key clauses and risks
 - **Due Diligence** - Comprehensive contract analysis
 - **Risk Assessment** - Understand potential legal exposure
 
 ### **Business Teams**
+
 - **Contract Management** - Organize and analyze contract portfolios
 - **Compliance** - Ensure contracts meet regulatory requirements
 - **Negotiation** - Identify areas for contract improvement
 
 ### **Developers**
+
 - **Legal Tech** - Build contract analysis features
 - **Document Processing** - Integrate PDF analysis capabilities
 - **AI Applications** - Use as a foundation for legal AI tools
@@ -199,9 +222,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **PyMuPDF** for excellent PDF processing capabilities
-- **HuggingFace** for the DialoGPT model
+- **HuggingFace** for the RoBERTa legal Q&A model
 - **Streamlit** for the amazing web framework
-- **FastAPI** for the high-performance API framework
+- **Rakib/roberta-base-on-cuad** for specialized legal contract analysis
 
 ## 📞 Support
 
