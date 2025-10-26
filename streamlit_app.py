@@ -55,6 +55,17 @@ if uploaded_file is not None:
                         pdf_bytes = f.read()
                         base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
                     
+                    # Check if base64 is too long (browsers have limits)
+                    if len(base64_pdf) > 1000000:  # 1MB limit
+                        st.warning("PDF is too large for inline display. Using download option.")
+                        st.download_button(
+                            label="Download PDF",
+                            data=pdf_bytes,
+                            file_name=uploaded_file.name,
+                            mime="application/pdf"
+                        )
+                        return
+                    
                     pdf_html = f"""
                     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/web/pdf_viewer.css"/>
                     <style>
@@ -62,6 +73,8 @@ if uploaded_file is not None:
                       .textLayer > span {{ color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; }}
                       .textLayer ::selection {{ background: rgb(0, 100, 255); }}
                       .highlightOverlay {{ position: absolute; background: rgba(255, 230, 0, 0.35); pointer-events: none; }}
+                      #pdf-container {{ min-height: 600px; }}
+                      #the-canvas {{ border: 1px solid #ccc; }}
                     </style>
                     <div id="pdf-container" style="border:1px solid #ddd; padding:8px;">
                       <div id="pager-controls" style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
@@ -78,15 +91,20 @@ if uploaded_file is not None:
                         <div id="highlight-layer" style="position:absolute; left:0; top:0; pointer-events:none;"></div>
                       </div>
                       <div id="scroll-container" style="display:none; height:80vh; overflow:auto; border:1px solid #eee; padding:8px; box-sizing:border-box;"></div>
+                      <div id="error-message" style="display:none; color:red; padding:20px; text-align:center;"></div>
                     </div>
                     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
                     <script>
                       (async () => {{
-                        const VIEW_MODE = "{view_mode}";
-                        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+                        try {{
+                          const VIEW_MODE = "{view_mode}";
+                          pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
 
-                        const pdfData = "data:application/pdf;base64,{base64_pdf}";
-                        const pdf = await pdfjsLib.getDocument(pdfData).promise;
+                          const pdfData = "data:application/pdf;base64,{base64_pdf}";
+                          console.log("Loading PDF with data length:", pdfData.length);
+                          
+                          const pdf = await pdfjsLib.getDocument(pdfData).promise;
+                          console.log("PDF loaded successfully, pages:", pdf.numPages);
 
                         const canvas = document.getElementById('the-canvas');
                         const ctx = canvas.getContext('2d');
@@ -235,6 +253,11 @@ if uploaded_file is not None:
                             }});
                           }}
                         }}
+                        }} catch (error) {{
+                          console.error("PDF loading error:", error);
+                          document.getElementById('error-message').style.display = 'block';
+                          document.getElementById('error-message').textContent = 'Error loading PDF: ' + error.message;
+                        }}
                       }})();
                     </script>
                     """
@@ -243,13 +266,19 @@ if uploaded_file is not None:
                     
                 except Exception as e:
                     st.error(f"Error displaying PDF: {e}")
-                    # Fallback: show PDF download link
-                    st.download_button(
-                        label="Download PDF",
-                        data=pdf_bytes,
-                        file_name=uploaded_file.name,
-                        mime="application/pdf"
-                    )
+                    # Fallback: try simple iframe approach
+                    try:
+                        base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+                        iframe_html = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
+                        st.markdown(iframe_html, unsafe_allow_html=True)
+                    except:
+                        # Final fallback: show PDF download link
+                        st.download_button(
+                            label="Download PDF",
+                            data=pdf_bytes,
+                            file_name=uploaded_file.name,
+                            mime="application/pdf"
+                        )
             
             with col2:
                 st.header("Detected Clauses")
