@@ -21,7 +21,7 @@ CLAWS (Clause Law Assessment Workflow System) is a production-ready web applicat
 ## 🔄 How it works
 
 1. **Upload PDF** → Contract is processed asynchronously
-2. **Clause Detection** → 16 clause types identified using intelligent pattern matching
+2. **Clause Detection** → 16 clause types identified using pattern matching + ML fallbacks
 3. **Real-Time Highlighting** → Clauses highlighted in PDF with color coding
 4. **Interactive Q&A** → Ask questions and get intelligent responses with risk analysis
 5. **Source Citations** → All answers include contract page references and policy sources
@@ -32,21 +32,17 @@ CLAWS (Clause Law Assessment Workflow System) is a production-ready web applicat
 [Upload] -> [Parse (PyMuPDF)] -> [Detect Clauses] -> [Highlight PDF]
       |           |                    |                    |
       v           v                    v                    v
-  Storage    Text + Coordinates    Regex Patterns      Real-time UI
+  Storage    Text + Coordinates    Pattern Matching    Real-time UI
       |           |                    |                    |
       +-----------+--------------------+--------------------+
                                       |
                               [FastAPI + Streamlit]
-                                      |
-                              [DialoGPT-medium LLM]
-                                      |
-                              [Q&A Responses]
 ```
 
 **Core Components:**
 - **PDF Processing**: PyMuPDF for text extraction with coordinate tracking
-- **Clause Detection**: Intelligent pattern matching using 16 regex patterns
-- **Q&A System**: DialoGPT-medium LLM with risk analysis and source citations
+- **Clause Detection**: Intelligent pattern matching + optional ML fallbacks
+- **Q&A System**: Enhanced system with risk analysis and source citations
 - **UI**: Streamlit with PDF.js for professional PDF viewing
 - **Backend**: FastAPI with async processing and comprehensive error handling
 
@@ -54,7 +50,6 @@ CLAWS (Clause Law Assessment Workflow System) is a production-ready web applicat
 
 - **Legal Risk Database**: 6 critical clause types with detailed risk assessments (Anti-Assignment, Governing Law, Termination, Confidentiality, Indemnification, Force Majeure)
 - **Pattern Library**: 16 regex patterns for clause detection
-- **LLM Integration**: DialoGPT-medium for intelligent Q&A responses
 - **Source Citations**: All responses include contract page references
 - **Severity Ratings**: High/Medium risk classifications with practical examples
 
@@ -93,6 +88,11 @@ streamlit run ui/app.py
 - **Streamlit App**: http://localhost:8501
 - **API Docs**: http://localhost:8000/docs (if backend running separately)
 
+**For Streamlit Cloud Deployment:**
+1. Push to GitHub
+2. Connect to [share.streamlit.io](https://share.streamlit.io)
+3. Deploy instantly!
+
 ## 🧪 Testing
 
 ```bash
@@ -128,18 +128,46 @@ CLAWS/
 ✅ **Clause Detection**: 16 critical legal clause types with high accuracy
 ✅ **Q&A System**: Intelligent responses with risk analysis and citations
 ✅ **PDF Highlighting**: Real-time highlighting with interactive navigation
-✅ **Production Ready**: Optimized for professional use
+✅ **Streamlit Optimized**: Designed for Streamlit Cloud deployment
 ✅ **Backend API**: Complete FastAPI with async processing
 ✅ **Error Handling**: Comprehensive error handling and graceful degradation
 
+## 🚀 Deployment
 
-## 🤖 Models & Technology
+The system is designed for simple deployment using Streamlit:
 
-- **Clause Detection**: Pure pattern-based regex matching (no ML required)
-- **Q&A System**: DialoGPT-medium (Microsoft) for intelligent responses
-- **PDF Processing**: PyMuPDF for text extraction and highlighting
-- **UI Framework**: Streamlit with PDF.js integration
-- **Backend**: FastAPI with async processing
+**Streamlit Deployment (Recommended)**
+```bash
+# Deploy directly with Streamlit
+streamlit run ui/app.py --server.port 8501 --server.address 0.0.0.0
+```
+
+**Local Development**
+```bash
+# Terminal 1: Start backend
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Terminal 2: Start frontend  
+streamlit run ui/app.py --server.port 8501
+```
+
+**Streamlit Cloud Deployment**
+1. Push your code to GitHub
+2. Connect your repo to [share.streamlit.io](https://share.streamlit.io)
+3. Deploy with one click - no configuration needed!
+
+**Streamlit Configuration**
+Create a `.streamlit/config.toml` file for optimal deployment:
+```toml
+[server]
+port = 8501
+address = "0.0.0.0"
+enableCORS = false
+enableXsrfProtection = false
+
+[browser]
+gatherUsageStats = false
+```
 
 ## 📊 Performance
 
@@ -147,10 +175,10 @@ CLAWS/
 - **Q&A Response**: <3s for intelligent responses
 - **Memory Usage**: ~500MB-1GB for full system
 - **Accuracy**: High precision on critical legal clauses
-- **Production Ready**: Optimized for professional deployment
+- **Streamlit Ready**: Optimized for Streamlit Cloud deployment
 
 ## License
 
-This repository is for educational/demo purposes. The system uses DialoGPT-medium (Microsoft) for Q&A functionality. Verify model licenses before redistribution.
+This repository is for educational/demo purposes. Verify dataset/model licenses (e.g., CUAD, DocLayNet) before redistribution.
 
 

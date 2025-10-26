@@ -369,15 +369,7 @@ def explain_clause(request: QARequest):
 @app.on_event("startup")
 def _start_worker():
     print("Starting CLAWS with rule-based legal detection")
-  
-    try:
-        llm_generator = get_llm_generator()
-        if llm_generator.model is not None:
-            print("DialoGPT-medium LLM loaded successfully")
-        else:
-            print("LLM not available - using rule-based responses only")
-    except Exception as e:
-        print(f"LLM not available - using rule-based responses only: {e}")
+    print("DialoGPT will load on first use")
     t= Thread(target= _worker, daemon= True)
     t.start()
 

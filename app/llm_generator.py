@@ -31,13 +31,16 @@ class LLMGenerator:
     
     def generate_explanation(self, clause_text, question):
         if not self.model or not self.tokenizer:
-            return "No explanation available"
+            if not self.model:
+                self.load_model()
+            if not self.model or not self.tokenizer:
+                return "No explanation available"
         
         try:
             
             prompt = f"Legal Contract Analysis\n\nContext: {clause_text}\nQuestion: {question}\nAnswer:"
             
-            # Tokenize with appropriate max length
+        
             inputs = self.tokenizer.encode(prompt, return_tensors='pt', max_length=512, truncation=True)
             inputs = inputs.to(self.device)
           
@@ -88,5 +91,4 @@ def get_llm_generator():
     global _llm_generator
     if _llm_generator is None:
         _llm_generator = LLMGenerator()
-        _llm_generator.load_model()
     return _llm_generator
