@@ -13,7 +13,7 @@ from pathlib import Path
 from app.qa_system import parse_question, get_policy_explanation, retrieve_clause, generate_answer, generate_contract_summary
 from app.parser import parse_pdf
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import FileResponse
 import requests
 
@@ -37,17 +37,18 @@ async def get_pdf(job_id: str):
     return {"error": "PDF not found"}
 
 @app.post("/analyze")
-async def analyze_pdf(pdf_file):
+async def analyze_pdf(pdf: UploadFile = File(...)):
     global pdf_path, clauses_data
     # Save uploaded file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-        tmp_file.write(pdf_file.file.read())
+        content = await pdf.read()
+        tmp_file.write(content)
         pdf_path = tmp_file.name
     
     # Process PDF
     clauses_data = parse_pdf(pdf_path)
     
-    return {"job_id": "streamlit_job", "filename": pdf_file.filename, "status": "done"}
+    return {"job_id": "streamlit_job", "filename": pdf.filename, "status": "done"}
 
 @app.get("/result/{job_id}")
 async def get_result(job_id: str):
