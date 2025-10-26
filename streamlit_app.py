@@ -49,6 +49,11 @@ if dark_mode:
         color: #fafafa !important;
     }
     
+    /* File uploader label specifically */
+    .stFileUploader label {
+        color: #ffffff !important;
+    }
+    
     /* Buttons */
     .stButton button {
         background-color: #2d2d2d;
