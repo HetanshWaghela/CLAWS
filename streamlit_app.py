@@ -179,21 +179,25 @@ if uploaded is not None:
             mime="application/pdf"
         )
         
-        # Convert highlighted PDF to base64 for display
-        base64_pdf = base64.b64encode(highlighted_pdf_data).decode('utf-8')
-        
-        # Display PDF using iframe (works on Streamlit Cloud)
-        pdf_display = f'''
-        <iframe src="data:application/pdf;base64,{base64_pdf}" 
-                width="100%" 
-                height="600" 
-                type="application/pdf"
-                style="border: 1px solid #ddd; border-radius: 5px;">
-        </iframe>
-        '''
-        
+        # Display PDF using Streamlit's native component
         st.markdown("**PDF Preview (with detected clause highlights):**")
-        st.markdown(pdf_display, unsafe_allow_html=True)
+        
+        # Try native PDF display first
+        try:
+            st.pdf(highlighted_pdf_data)
+        except Exception as pdf_error:
+            st.warning(f"Native PDF viewer not available: {pdf_error}")
+            
+            # Fallback: Show PDF info and download option
+            st.info("📄 PDF is ready for download. Click the download button above to view the highlighted PDF with all detected clauses.")
+            
+            # Show PDF metadata
+            st.markdown("**PDF Information:**")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("File Size", f"{len(highlighted_pdf_data) / 1024:.1f} KB")
+            with col2:
+                st.metric("Clauses Found", f"{len(clauses)}")
         
     except Exception as e:
         st.error(f"Could not display PDF: {e}")
