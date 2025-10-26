@@ -81,11 +81,17 @@ if dark_mode:
         color: #fafafa !important;
     }
     
-    /* Drag and drop text */
-    .stFileUploader .uploadedFile::before {
+    /* Drag and drop text - force visibility */
+    .stFileUploader div[data-testid="stFileUploader"] {
         color: #000000 !important;
     }
-    .stFileUploader .uploadedFile::after {
+    .stFileUploader div[data-testid="stFileUploader"] * {
+        color: #000000 !important;
+    }
+    .stFileUploader .uploadedFile {
+        color: #000000 !important;
+    }
+    .stFileUploader .uploadedFile * {
         color: #000000 !important;
     }
     
