@@ -21,41 +21,133 @@ with col2:
 if dark_mode:
     st.markdown("""
     <style>
+    /* Main app background */
     .stApp {
         background-color: #0e1117;
         color: #fafafa;
     }
+    
+    /* Main content area */
     .main .block-container {
         background-color: #0e1117;
         color: #fafafa;
     }
+    
+    /* Sidebar styling */
     .stSidebar {
         background-color: #1e1e1e;
     }
     .stSidebar .sidebar-content {
         background-color: #1e1e1e;
     }
-    .stSelectbox label, .stTextInput label, .stTextArea label {
+    
+    /* All text elements */
+    .stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
         color: #fafafa !important;
     }
-    .stMarkdown {
-        color: #fafafa;
+    
+    /* Form labels and inputs */
+    .stSelectbox label, .stTextInput label, .stTextArea label, .stFileUploader label {
+        color: #fafafa !important;
     }
+    
+    /* Buttons */
+    .stButton button {
+        background-color: #2d2d2d;
+        color: #fafafa;
+        border: 1px solid #555;
+    }
+    .stButton button:hover {
+        background-color: #3d3d3d;
+    }
+    
+    /* File uploader */
+    .stFileUploader {
+        background-color: #2d2d2d;
+        border: 1px solid #555;
+    }
+    .stFileUploader label {
+        color: #fafafa !important;
+    }
+    
+    /* Toggle switch */
+    .stToggle {
+        background-color: #2d2d2d;
+    }
+    
+    /* Success messages */
     .stSuccess {
         background-color: #1e3a1e;
         border-color: #4caf50;
+        color: #fafafa;
     }
+    .stSuccess .stMarkdown {
+        color: #fafafa !important;
+    }
+    
+    /* Error messages */
     .stError {
         background-color: #3a1e1e;
         border-color: #f44336;
+        color: #fafafa;
     }
+    .stError .stMarkdown {
+        color: #fafafa !important;
+    }
+    
+    /* Warning messages */
     .stWarning {
         background-color: #3a3a1e;
         border-color: #ff9800;
+        color: #fafafa;
     }
+    .stWarning .stMarkdown {
+        color: #fafafa !important;
+    }
+    
+    /* Info messages */
     .stInfo {
         background-color: #1e3a3a;
         border-color: #2196f3;
+        color: #fafafa;
+    }
+    .stInfo .stMarkdown {
+        color: #fafafa !important;
+    }
+    
+    /* Metrics */
+    .metric-container {
+        background-color: #2d2d2d;
+        border: 1px solid #555;
+    }
+    .metric-container .metric-value {
+        color: #fafafa !important;
+    }
+    .metric-container .metric-label {
+        color: #cccccc !important;
+    }
+    
+    /* Progress bars */
+    .stProgress .stProgressBar {
+        background-color: #2d2d2d;
+    }
+    
+    /* Columns */
+    .stColumn {
+        background-color: transparent;
+    }
+    
+    /* General text override */
+    * {
+        color: #fafafa !important;
+    }
+    
+    /* Specific overrides for better readability */
+    .stMarkdown strong, .stMarkdown b {
+        color: #ffffff !important;
+    }
+    .stMarkdown em, .stMarkdown i {
+        color: #e0e0e0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
