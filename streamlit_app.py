@@ -40,6 +40,17 @@ if uploaded is not None:
             # Parse PDF directly
             clauses = parse_pdf(temp_path)
             
+            # Check if highlighted PDF was created
+            highlighted_path = temp_path.replace('.pdf', '_highlighted.pdf')
+            if os.path.exists(highlighted_path):
+                # Use highlighted PDF for display
+                with open(highlighted_path, "rb") as f:
+                    highlighted_pdf_data = f.read()
+                os.remove(highlighted_path)  # Clean up
+            else:
+                # Fallback to original
+                highlighted_pdf_data = uploaded.getvalue()
+            
             # Clean up temp file
             os.remove(temp_path)
             
@@ -156,19 +167,20 @@ if uploaded is not None:
                 st.error(f"Error processing question: {str(e)}")
 
     # PDF Viewer
-    st.subheader("📄 Document Viewer")
+    st.subheader("📄 Document Viewer (with Highlights)")
     
     # Simple PDF display using base64
     try:
+        # Use highlighted PDF data
         st.download_button(
-            label="📥 Download PDF",
-            data=uploaded.getvalue(),
-            file_name=uploaded.name,
+            label="📥 Download Highlighted PDF",
+            data=highlighted_pdf_data,
+            file_name=uploaded.name.replace('.pdf', '_highlighted.pdf'),
             mime="application/pdf"
         )
         
-        # Convert PDF to base64 for display
-        base64_pdf = base64.b64encode(uploaded.getvalue()).decode('utf-8')
+        # Convert highlighted PDF to base64 for display
+        base64_pdf = base64.b64encode(highlighted_pdf_data).decode('utf-8')
         
         # Display PDF using iframe (works on Streamlit Cloud)
         pdf_display = f'''
@@ -180,7 +192,7 @@ if uploaded is not None:
         </iframe>
         '''
         
-        st.markdown("**PDF Preview:**")
+        st.markdown("**PDF Preview (with detected clause highlights):**")
         st.markdown(pdf_display, unsafe_allow_html=True)
         
     except Exception as e:
