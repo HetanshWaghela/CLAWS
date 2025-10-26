@@ -16,74 +16,40 @@ try:
     from app.parser import parse_pdf
     from app.qa_system import parse_question, get_policy_explanation, retrieve_clause, generate_answer, generate_contract_summary
     from app.llm_generator import get_llm_generator
+    from app.example_database import get_example_pdfs, get_example_pdf_path, get_example_pdf_info
 except ImportError as e:
     st.error(f"Import error: {e}")
     st.stop()
 
-st.sidebar.header("Upload PDF")
+st.sidebar.header("📄 Upload PDF")
 uploaded = st.sidebar.file_uploader("Choose a contract PDF", type=["pdf"])
 
-# Example PDFs section
-st.sidebar.markdown("---")
-st.sidebar.subheader("📋 Example Contracts")
+# Example PDFs Section
+st.sidebar.header("📋 Example Contracts")
+st.sidebar.write("Try these sample contracts:")
 
-# List example PDFs - use absolute paths
-base_dir = os.path.dirname(os.path.abspath(__file__))
-example_pdfs = [
-    {
-        "name": "Co-Branding Agreement",
-        "file": os.path.join(base_dir, "examples", "StampscomInc_20001114_10-Q_EX-10.47_2631630_EX-10.47_Co-Branding Agreement.pdf"),
-        "description": "Stamps.com Co-Branding Agreement"
-    },
-    {
-        "name": "Affiliate Agreement", 
-        "file": os.path.join(base_dir, "examples", "UsioInc_20040428_SB-2_EX-10.11_1723988_EX-10.11_Affiliate Agreement 2.pdf"),
-        "description": "Usio Inc. Affiliate Agreement"
-    }
-]
-
-# Check which files exist and show them
-available_pdfs = []
-for pdf in example_pdfs:
-    # Debug info
-    st.sidebar.text(f"Looking for: {pdf['file']}")
-    st.sidebar.text(f"Exists: {os.path.exists(pdf['file'])}")
-    
-    if os.path.exists(pdf["file"]):
-        available_pdfs.append(pdf)
-        with open(pdf["file"], "rb") as f:
-            pdf_data = f.read()
+example_pdfs = get_example_pdfs()
+for name, info in example_pdfs.items():
+    with st.sidebar.expander(f"📄 {name}"):
+        st.write(f"**Description:** {info['description']}")
+        st.write(f"**Pages:** {info['pages']}")
+        st.write(f"**Complexity:** {info['complexity']}")
+        st.write(f"**Key Topics:** {', '.join(info['key_topics'])}")
+        st.write(f"**Clause Types:** {', '.join(info['clause_types'])}")
         
-        st.sidebar.download_button(
-            label=f"📄 {pdf['name']}",
-            data=pdf_data,
-            file_name=pdf["name"] + ".pdf",
-            mime="application/pdf",
-            help=pdf["description"]
-        )
-    else:
-        st.sidebar.error(f"❌ {pdf['name']} not found")
-
-# Quick test section
-st.sidebar.markdown("---")
-st.sidebar.subheader("🚀 Quick Test")
-
-# Use session state to handle file loading
-if 'example_loaded' not in st.session_state:
-    st.session_state.example_loaded = None
-
-for i, pdf in enumerate(available_pdfs):
-    if st.sidebar.button(f"Test with {pdf['name']}", key=f"test_{i}"):
-        st.session_state.example_loaded = pdf['file']
-        st.rerun()
-
-# Load example file if selected
-if st.session_state.example_loaded and os.path.exists(st.session_state.example_loaded):
-    with open(st.session_state.example_loaded, "rb") as f:
-        uploaded = type('obj', (object,), {
-            'name': os.path.basename(st.session_state.example_loaded),
-            'getvalue': lambda: f.read()
-        })()
+        if st.button(f"Load {name}", key=f"load_{name}"):
+            # Load the example PDF
+            example_path = get_example_pdf_path(info['filename'])
+            if os.path.exists(example_path):
+                with open(example_path, "rb") as f:
+                    uploaded = type('obj', (object,), {
+                        'name': info['filename'],
+                        'getvalue': lambda: f.read()
+                    })()
+                st.success(f"✅ Loaded {name}!")
+                st.rerun()
+            else:
+                st.error(f"Example PDF not found: {example_path}")
 
 if uploaded is not None:
     st.success(f"📄 Uploaded: {uploaded.name}")
@@ -255,7 +221,57 @@ if uploaded is not None:
         st.info("No clauses detected in this document.")
 
 else:
-    st.info("📁 Upload a PDF from the sidebar to start analysis.")
+    # Main page when no PDF is uploaded
+    st.markdown("## 🚀 Welcome to CLAWS!")
+    st.markdown("**Intelligent Legal Contract Analysis with AI-Powered Clause Detection**")
+    
+    st.markdown("### 📋 Try These Example Contracts")
+    st.markdown("Click on any example below to load it instantly, or upload your own PDF from the sidebar.")
+    
+    # Display example PDFs in a grid
+    example_pdfs = get_example_pdfs()
+    cols = st.columns(2)
+    
+    for i, (name, info) in enumerate(example_pdfs.items()):
+        with cols[i % 2]:
+            with st.container():
+                st.markdown(f"#### 📄 {name}")
+                st.markdown(f"**{info['description']}**")
+                st.markdown(f"📊 **Pages:** {info['pages']} | **Complexity:** {info['complexity']}")
+                st.markdown(f"🏷️ **Topics:** {', '.join(info['key_topics'])}")
+                st.markdown(f"⚖️ **Clauses:** {', '.join(info['clause_types'])}")
+                
+                if st.button(f"Load {name}", key=f"main_load_{name}", type="primary"):
+                    example_path = get_example_pdf_path(info['filename'])
+                    if os.path.exists(example_path):
+                        with open(example_path, "rb") as f:
+                            uploaded = type('obj', (object,), {
+                                'name': info['filename'],
+                                'getvalue': lambda: f.read()
+                            })()
+                        st.success(f"✅ Loaded {name}!")
+                        st.rerun()
+                    else:
+                        st.error(f"Example PDF not found: {example_path}")
+    
+    st.markdown("---")
+    st.markdown("### 🎯 What CLAWS Can Do")
+    st.markdown("""
+    - **🔍 Detect 16 Legal Clause Types** automatically
+    - **⚖️ Assess Risk** for 6 critical clause categories  
+    - **🤖 Answer Questions** about contract terms using AI
+    - **📄 Highlight PDFs** with detected clauses
+    - **📊 Provide Analysis** with confidence scores
+    """)
+    
+    st.markdown("### 💡 Try Asking Questions Like:")
+    st.markdown("""
+    - "What is this contract about?"
+    - "What are the payment terms?"
+    - "What are the risks with the termination clause?"
+    - "Who are the parties involved?"
+    - "How can this contract be terminated?"
+    """)
 
 # Clean up temp files at the end
 if 'temp_files' in locals():
