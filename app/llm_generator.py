@@ -5,87 +5,64 @@ class LLMGenerator:
     def __init__(self):
         self.model = None
         self.tokenizer = None
+        self.pipeline = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         
     def load_model(self):
         try:
-            print("Loading DialoGPT-medium for legal text analysis...")
+            print("Loading RoBERTa legal Q&A model...")
             
-            from transformers import AutoTokenizer, AutoModelForCausalLM
+            from transformers import pipeline, AutoTokenizer, AutoModelForQuestionAnswering
             
-            self.tokenizer = AutoTokenizer.from_pretrained('microsoft/DialoGPT-medium')
-            self.model = AutoModelForCausalLM.from_pretrained('microsoft/DialoGPT-medium')
+            # Use pipeline for easier question-answering
+            self.pipeline = pipeline(
+                "question-answering", 
+                model="Rakib/roberta-base-on-cuad",
+                device=0 if self.device == "cuda" else -1
+            )
             
-            
-            if self.tokenizer.pad_token is None:
-                self.tokenizer.pad_token = self.tokenizer.eos_token
+            # Also load model directly for more control if needed
+            self.tokenizer = AutoTokenizer.from_pretrained("Rakib/roberta-base-on-cuad")
+            self.model = AutoModelForQuestionAnswering.from_pretrained("Rakib/roberta-base-on-cuad")
             
             self.model.to(self.device)
             self.model.eval()
-            print("DialoGPT-medium loaded successfully")
+            print("RoBERTa legal Q&A model loaded successfully")
             return True
         except Exception as e:
-            print(f"Failed to load DialoGPT-medium: {e}")
+            print(f"Failed to load RoBERTa legal model: {e}")
             print("LLM functionality will be disabled - using rule-based responses only")
             return False
     
     def generate_explanation(self, clause_text, question):
-        if not self.model or not self.tokenizer:
+        if not self.pipeline:
             if not self.model:
                 self.load_model()
-            if not self.model or not self.tokenizer:
+            if not self.pipeline:
                 return "No explanation available"
         
         try:
+            # Use the question-answering pipeline
+            # The model expects context and question separately
+            result = self.pipeline(
+                question=question,
+                context=clause_text,
+                max_answer_len=200,
+                handle_impossible_answer=True
+            )
             
-            # Create a more specific prompt for legal analysis
-            if "termination" in question.lower():
-                prompt = f"You are a legal expert analyzing contract clauses. Focus on termination risks and implications.\n\nContract Context: {clause_text}\n\nQuestion: {question}\n\nProvide a detailed legal analysis covering:\n1. Key termination provisions\n2. Potential risks and implications\n3. Important considerations for the parties\n\nAnswer:"
-            elif "risk" in question.lower():
-                prompt = f"You are a legal expert analyzing contract risks.\n\nContract Context: {clause_text}\n\nQuestion: {question}\n\nProvide a detailed risk assessment covering:\n1. Identified risks\n2. Severity levels\n3. Mitigation strategies\n\nAnswer:"
-            else:
-                prompt = f"Legal Contract Analysis\n\nContext: {clause_text}\nQuestion: {question}\n\nProvide a clear, professional legal analysis:\n\nAnswer:"
-            
-        
-            inputs = self.tokenizer.encode(prompt, return_tensors='pt', max_length=512, truncation=True)
-            inputs = inputs.to(self.device)
-          
-            with torch.no_grad():
-                outputs = self.model.generate(
-                    inputs,
-                    max_length=inputs.shape[1] + 100,
-                    num_return_sequences=1,
-                    temperature=0.6,  
-                    do_sample=True,
-                    top_p=0.8,
-                    top_k=40,
-                    pad_token_id=self.tokenizer.eos_token_id,
-                    eos_token_id=self.tokenizer.eos_token_id,
-                    repetition_penalty=1.2,
-                    no_repeat_ngram_size=3  
-                )
-            
-            response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-            
-            if "Answer:" in response:
-                answer = response.split("Answer:")[-1].strip()
-            else:
-                answer = response[len(prompt):].strip()
-            
-            if answer:
-              
-                sentences = answer.split('.')
-                if len(sentences) > 1 and len(sentences[-1].strip()) < 5:
-                    answer = '.'.join(sentences[:-1]) + '.'
+            if result['answer'] and result['answer'] != "":
+                # Add confidence score if available
+                confidence = result.get('score', 0)
+                answer = result['answer']
                 
-                answer = answer.replace('Answer:', '').replace('answer:', '').strip()
-              
-                if len(answer) > 10:
-                    return answer[:600]  
+                # Format the response nicely
+                if confidence > 0.5:
+                    return f"Based on the contract analysis: {answer}"
                 else:
-                    return "No explanation available"
+                    return f"Answer (low confidence): {answer}"
             else:
-                return "No explanation available"
+                return "No specific answer found in the contract text."
                 
         except Exception as e:
             print(f"LLM generation error: {e}")

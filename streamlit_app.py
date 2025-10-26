@@ -110,13 +110,17 @@ if uploaded is not None:
                 if clause_type == 'GENERAL_CONTRACT':
                     # Use LLM for general contract questions
                     try:
-                        context = "Contract clauses detected:\n"
-                        for clause in clauses[:10]:
-                            context += f"- {clause.get('type', 'Unknown')}: {clause.get('text', '')[:100]}...\n"
+                        # Create better context for the legal Q&A model
+                        context_parts = []
+                        for clause in clauses[:15]:  # Use more clauses for better context
+                            clause_type_name = clause.get('type', 'Unknown')
+                            clause_text = clause.get('text', '')
+                            context_parts.append(f"{clause_type_name}: {clause_text}")
+                        
+                        context = " ".join(context_parts)
                         
                         llm_generator = get_llm_generator()
-                        prompt = f"{context}\n\nQuestion: {question}\n\nAnswer:"
-                        answer = llm_generator.generate_explanation(prompt, question)
+                        answer = llm_generator.generate_explanation(context, question)
                         
                         if answer and answer != "No explanation available":
                             st.success("**Answer:**")
