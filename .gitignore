@@ -9,6 +9,7 @@ data/uploads/
 app/__pycache__/
 data/results/
 *.pdf
+!data/example_contracts/*.pdf
 claws_info.txt
 .json
 *.pt 
