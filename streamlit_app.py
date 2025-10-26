@@ -23,6 +23,51 @@ except ImportError as e:
 st.sidebar.header("Upload PDF")
 uploaded = st.sidebar.file_uploader("Choose a contract PDF", type=["pdf"])
 
+# Example PDFs section
+st.sidebar.markdown("---")
+st.sidebar.subheader("📋 Example Contracts")
+
+# List example PDFs
+example_pdfs = [
+    {
+        "name": "Co-Branding Agreement",
+        "file": "examples/StampscomInc_20001114_10-Q_EX-10.47_2631630_EX-10.47_Co-Branding Agreement.pdf",
+        "description": "Stamps.com Co-Branding Agreement"
+    },
+    {
+        "name": "Affiliate Agreement", 
+        "file": "examples/UsioInc_20040428_SB-2_EX-10.11_1723988_EX-10.11_Affiliate Agreement 2.pdf",
+        "description": "Usio Inc. Affiliate Agreement"
+    }
+]
+
+for pdf in example_pdfs:
+    if os.path.exists(pdf["file"]):
+        with open(pdf["file"], "rb") as f:
+            pdf_data = f.read()
+        
+        st.sidebar.download_button(
+            label=f"📄 {pdf['name']}",
+            data=pdf_data,
+            file_name=pdf["name"] + ".pdf",
+            mime="application/pdf",
+            help=pdf["description"]
+        )
+
+# Quick test section
+st.sidebar.markdown("---")
+st.sidebar.subheader("🚀 Quick Test")
+
+if st.sidebar.button("Test with Co-Branding Agreement"):
+    example_file = "examples/StampscomInc_20001114_10-Q_EX-10.47_2631630_EX-10.47_Co-Branding Agreement.pdf"
+    if os.path.exists(example_file):
+        with open(example_file, "rb") as f:
+            uploaded = type('obj', (object,), {
+                'name': 'Co-Branding Agreement.pdf',
+                'getvalue': lambda: f.read()
+            })()
+        st.rerun()
+
 if uploaded is not None:
     st.success(f"📄 Uploaded: {uploaded.name}")
     

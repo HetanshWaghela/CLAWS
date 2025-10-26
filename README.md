@@ -100,7 +100,7 @@ graph TB
 ### **Option 1: Use Online Demo**
 
 1. Visit **[claws-legal.streamlit.app](https://claws-legal.streamlit.app)**
-2. Upload a PDF contract
+2. Upload a PDF contract OR use the example contracts provided
 3. Download highlighted PDF and ask questions!
 
 ### **Option 2: Local Development**
@@ -177,6 +177,9 @@ CLAWS/
 │   ├── qa_system.py       # Q&A system logic
 │   ├── llm_generator.py   # RoBERTa legal Q&A model
 │   └── knowledge_base.py  # Legal knowledge database
+├── examples/              # Example contract PDFs
+│   ├── Co-Branding Agreement.pdf
+│   └── Affiliate Agreement.pdf
 ├── ui/                    # Separate frontend (optional)
 │   └── app.py            # Streamlit interface
 ├── streamlit_app.py       # Main standalone Streamlit app
