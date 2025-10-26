@@ -16,50 +16,46 @@ try:
     from app.parser import parse_pdf
     from app.qa_system import parse_question, get_policy_explanation, retrieve_clause, generate_answer, generate_contract_summary
     from app.llm_generator import get_llm_generator
-    from app.example_database import get_example_pdfs, get_example_pdf_path, get_example_pdf_info
 except ImportError as e:
     st.error(f"Import error: {e}")
     st.stop()
 
-st.sidebar.header("📄 Upload PDF")
+st.sidebar.header("📋 Try Example Contracts")
+col1, col2 = st.sidebar.columns(2)
+with col1:
+    if st.button("Co-Branding Agreement", use_container_width=True):
+        with open("data/example_contracts/co_branding.pdf", "rb") as f:
+            st.session_state.example_pdf = f.read()
+            st.session_state.example_name = "Co-Branding Agreement.pdf"
+with col2:
+    if st.button("Affiliate Agreement", use_container_width=True):
+        with open("data/example_contracts/affiliate.pdf", "rb") as f:
+            st.session_state.example_pdf = f.read()
+            st.session_state.example_name = "Affiliate Agreement.pdf"
+
+st.sidebar.header("📄 Upload Your Own PDF")
 uploaded = st.sidebar.file_uploader("Choose a contract PDF", type=["pdf"])
 
-# Example PDFs Section
-st.sidebar.header("📋 Example Contracts")
-st.sidebar.write("Try these sample contracts:")
-
-example_pdfs = get_example_pdfs()
-for name, info in example_pdfs.items():
-    with st.sidebar.expander(f"📄 {name}"):
-        st.write(f"**Description:** {info['description']}")
-        st.write(f"**Pages:** {info['pages']}")
-        st.write(f"**Complexity:** {info['complexity']}")
-        st.write(f"**Key Topics:** {', '.join(info['key_topics'])}")
-        st.write(f"**Clause Types:** {', '.join(info['clause_types'])}")
-        
-        if st.button(f"Load {name}", key=f"load_{name}"):
-            # Load the example PDF
-            example_path = get_example_pdf_path(info['filename'])
-            if os.path.exists(example_path):
-                with open(example_path, "rb") as f:
-                    uploaded = type('obj', (object,), {
-                        'name': info['filename'],
-                        'getvalue': lambda: f.read()
-                    })()
-                st.success(f"✅ Loaded {name}!")
-                st.rerun()
-            else:
-                st.error(f"Example PDF not found: {example_path}")
+# Handle example PDFs or uploaded PDFs
+pdf_data = None
+pdf_name = None
 
 if uploaded is not None:
-    st.success(f"📄 Uploaded: {uploaded.name}")
-    
+    pdf_data = uploaded.getvalue()
+    pdf_name = uploaded.name
+    st.success(f"📄 Uploaded: {pdf_name}")
+elif 'example_pdf' in st.session_state:
+    pdf_data = st.session_state.example_pdf
+    pdf_name = st.session_state.example_name
+    st.success(f"📄 Example loaded: {pdf_name}")
+
+if pdf_data is not None:
     with st.spinner("Analyzing PDF..."):
         try:
-            # Save uploaded file temporarily
-            temp_path = f"temp_{uploaded.name}"
+            # Save file temporarily
+            temp_path = f"temp_{pdf_name}"
             with open(temp_path, "wb") as f:
-                f.write(uploaded.getvalue())
+                f.write(pdf_data)
             
             # Parse PDF directly
             clauses = parse_pdf(temp_path)
@@ -73,7 +69,7 @@ if uploaded is not None:
                 # Don't delete yet - keep for Q&A
             else:
                 # Fallback to original
-                highlighted_pdf_data = uploaded.getvalue()
+                highlighted_pdf_data = pdf_data
             
             # Store temp files for later cleanup
             temp_files = [temp_path]
@@ -146,7 +142,7 @@ if uploaded is not None:
                         context_parts.append(f"[Page {page_num}] {clause_type_name}: {clause_text}")
                     
                     # Add document metadata
-                    context_parts.insert(0, f"Document: {uploaded.name}")
+                    context_parts.insert(0, f"Document: {pdf_name}")
                     context_parts.insert(1, f"Total clauses detected: {len(clauses)}")
                     
                     context = " ".join(context_parts)
@@ -221,57 +217,7 @@ if uploaded is not None:
         st.info("No clauses detected in this document.")
 
 else:
-    # Main page when no PDF is uploaded
-    st.markdown("## 🚀 Welcome to CLAWS!")
-    st.markdown("**Intelligent Legal Contract Analysis with AI-Powered Clause Detection**")
-    
-    st.markdown("### 📋 Try These Example Contracts")
-    st.markdown("Click on any example below to load it instantly, or upload your own PDF from the sidebar.")
-    
-    # Display example PDFs in a grid
-    example_pdfs = get_example_pdfs()
-    cols = st.columns(2)
-    
-    for i, (name, info) in enumerate(example_pdfs.items()):
-        with cols[i % 2]:
-            with st.container():
-                st.markdown(f"#### 📄 {name}")
-                st.markdown(f"**{info['description']}**")
-                st.markdown(f"📊 **Pages:** {info['pages']} | **Complexity:** {info['complexity']}")
-                st.markdown(f"🏷️ **Topics:** {', '.join(info['key_topics'])}")
-                st.markdown(f"⚖️ **Clauses:** {', '.join(info['clause_types'])}")
-                
-                if st.button(f"Load {name}", key=f"main_load_{name}", type="primary"):
-                    example_path = get_example_pdf_path(info['filename'])
-                    if os.path.exists(example_path):
-                        with open(example_path, "rb") as f:
-                            uploaded = type('obj', (object,), {
-                                'name': info['filename'],
-                                'getvalue': lambda: f.read()
-                            })()
-                        st.success(f"✅ Loaded {name}!")
-                        st.rerun()
-                    else:
-                        st.error(f"Example PDF not found: {example_path}")
-    
-    st.markdown("---")
-    st.markdown("### 🎯 What CLAWS Can Do")
-    st.markdown("""
-    - **🔍 Detect 16 Legal Clause Types** automatically
-    - **⚖️ Assess Risk** for 6 critical clause categories  
-    - **🤖 Answer Questions** about contract terms using AI
-    - **📄 Highlight PDFs** with detected clauses
-    - **📊 Provide Analysis** with confidence scores
-    """)
-    
-    st.markdown("### 💡 Try Asking Questions Like:")
-    st.markdown("""
-    - "What is this contract about?"
-    - "What are the payment terms?"
-    - "What are the risks with the termination clause?"
-    - "Who are the parties involved?"
-    - "How can this contract be terminated?"
-    """)
+    st.info("📁 Upload a PDF from the sidebar to start analysis.")
 
 # Clean up temp files at the end
 if 'temp_files' in locals():
