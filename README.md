@@ -39,26 +39,12 @@ CLAWS is an advanced legal document analysis system that automatically detects, 
 - **Downloadable Highlighted PDFs** with all annotations
 - **Multi-page Document** support
 
-## 🎯 Supported Clause Types
+## 🎯 Key Capabilities
 
-| Clause Type | Detection | Risk Analysis | Description |
-|-------------|-----------|---------------|-------------|
-| **Document Name** | ✅ | ❌ | Contract title and identification |
-| **Parties** | ✅ | ❌ | Contracting parties involved |
-| **Termination** | ✅ | ✅ | Contract termination conditions |
-| **Indemnification** | ✅ | ✅ | Liability and damage protection |
-| **Notices** | ✅ | ✅ | Communication requirements |
-| **Anti-Assignment** | ✅ | ✅ | Assignment restrictions |
-| **Governing Law** | ✅ | ❌ | Legal jurisdiction |
-| **Force Majeure** | ✅ | ❌ | Unforeseeable circumstances |
-| **Severability** | ✅ | ❌ | Clause independence |
-| **Confidentiality** | ✅ | ❌ | Information protection |
-| **Limitation of Liability** | ✅ | ❌ | Damage limitations |
-| **Warranties** | ✅ | ❌ | Guarantees and promises |
-| **Intellectual Property** | ✅ | ❌ | IP rights and ownership |
-| **Dispute Resolution** | ✅ | ❌ | Conflict resolution methods |
-| **Payment Terms** | ✅ | ❌ | Financial obligations |
-| **Renewal Terms** | ✅ | ❌ | Contract extension conditions |
+- **16 Legal Clause Types** automatically detected and highlighted
+- **6 Critical Risk Categories** with detailed analysis and recommendations
+- **Real-time PDF Processing** with instant visual feedback
+- **AI-Powered Q&A** for natural language contract queries
 
 ## 🏗️ Architecture
 
