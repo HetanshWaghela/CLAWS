@@ -160,8 +160,8 @@ if uploaded is not None:
     
     # Use Streamlit's built-in PDF display
     try:
-        st.file_downloader(
-            label="Download PDF",
+        st.download_button(
+            label="📥 Download PDF",
             data=uploaded.getvalue(),
             file_name=uploaded.name,
             mime="application/pdf"
