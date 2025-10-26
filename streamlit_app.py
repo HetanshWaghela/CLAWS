@@ -9,7 +9,56 @@ from pathlib import Path
 from string import Template
 
 st.set_page_config(page_title="CLAWS", layout="wide")
-st.title("CLAWS - Clause Law Assessment Workflow System")
+
+# Dark theme toggle
+col1, col2 = st.columns([1, 4])
+with col1:
+    dark_mode = st.toggle("🌙", help="Toggle dark mode")
+with col2:
+    st.title("CLAWS - Clause Law Assessment Workflow System")
+
+# Apply dark theme CSS
+if dark_mode:
+    st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0e1117;
+        color: #fafafa;
+    }
+    .main .block-container {
+        background-color: #0e1117;
+        color: #fafafa;
+    }
+    .stSidebar {
+        background-color: #1e1e1e;
+    }
+    .stSidebar .sidebar-content {
+        background-color: #1e1e1e;
+    }
+    .stSelectbox label, .stTextInput label, .stTextArea label {
+        color: #fafafa !important;
+    }
+    .stMarkdown {
+        color: #fafafa;
+    }
+    .stSuccess {
+        background-color: #1e3a1e;
+        border-color: #4caf50;
+    }
+    .stError {
+        background-color: #3a1e1e;
+        border-color: #f44336;
+    }
+    .stWarning {
+        background-color: #3a3a1e;
+        border-color: #ff9800;
+    }
+    .stInfo {
+        background-color: #1e3a3a;
+        border-color: #2196f3;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 
 try:
