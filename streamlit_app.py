@@ -60,42 +60,44 @@ if uploaded is not None:
             st.error(f"❌ Failed to analyze PDF: {e}")
             st.stop()
 
-    # Display results
-    if clauses:
-        st.subheader("📋 Detected Clauses")
+    # PDF Viewer (First)
+    st.subheader("📄 Document Viewer (with Highlights)")
+    
+    # Simple PDF display using base64
+    try:
+        # Use highlighted PDF data
+        st.download_button(
+            label="📥 Download Highlighted PDF",
+            data=highlighted_pdf_data,
+            file_name=uploaded.name.replace('.pdf', '_highlighted.pdf'),
+            mime="application/pdf"
+        )
         
-        # Group clauses by type
-        clause_groups = {}
-        for clause in clauses:
-            clause_type = clause.get('type', 'Unknown')
-            if clause_type not in clause_groups:
-                clause_groups[clause_type] = []
-            clause_groups[clause_type].append(clause)
+        # Display PDF information and download option
+        st.markdown("**PDF Preview (with detected clause highlights):**")
         
-        for clause_type, type_clauses in clause_groups.items():
-            with st.expander(f"{clause_type} ({len(type_clauses)} found)", expanded=True):
-                for i, clause in enumerate(type_clauses):
-                    score = clause.get('score', 0)
-                    text = clause.get('text', '')
-                    page = clause.get('page', 1)
-                  
-                    confidence_color = "🟢" if score > 0.1 else "🟡" if score > 0.05 else "🔴"
-                    confidence_text = "High" if score > 0.1 else "Medium" if score > 0.05 else "Low"
-                 
-                    col1, col2 = st.columns([3, 1])
-                    
-                    with col1:
-                        st.markdown(f"**{confidence_color} {confidence_text} Confidence**")
-                        st.markdown(f"**Page {page}**")
-                        st.markdown(f"*{text[:200]}{'...' if len(text) > 200 else ''}*")
-                    
-                    with col2:
-                        st.progress(score)
-                        st.caption(f"{score:.1%}")
-    else:
-        st.info("No clauses detected in this document.")
+        # Show PDF info and download option
+        st.info("📄 PDF is ready for download. Click the download button above to view the highlighted PDF with all detected clauses.")
+        
+        # Show PDF metadata
+        st.markdown("**PDF Information:**")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("File Size", f"{len(highlighted_pdf_data) / 1024:.1f} KB")
+        with col2:
+            st.metric("Clauses Found", f"{len(clauses)}")
+        
+        # Show a preview of detected clauses
+        if clauses:
+            st.markdown("**Detected Clauses Preview:**")
+            clause_types = list(set([clause.get('type', 'Unknown') for clause in clauses]))
+            st.write(f"Found {len(clause_types)} different clause types: {', '.join(clause_types[:5])}{'...' if len(clause_types) > 5 else ''}")
+        
+    except Exception as e:
+        st.error(f"Could not display PDF: {e}")
+        st.info("You can download the PDF using the button above to view it locally.")
 
-    # Q&A Section
+    # Q&A Section (Second)
     st.subheader("❓ Ask Questions About This Contract")
     
     question = st.text_input("Ask a question about the contract:", placeholder="e.g., What are the risks with the termination clause?")
@@ -166,42 +168,40 @@ if uploaded is not None:
             except Exception as e:
                 st.error(f"Error processing question: {str(e)}")
 
-    # PDF Viewer
-    st.subheader("📄 Document Viewer (with Highlights)")
-    
-    # Simple PDF display using base64
-    try:
-        # Use highlighted PDF data
-        st.download_button(
-            label="📥 Download Highlighted PDF",
-            data=highlighted_pdf_data,
-            file_name=uploaded.name.replace('.pdf', '_highlighted.pdf'),
-            mime="application/pdf"
-        )
+    # Display results (Third)
+    if clauses:
+        st.subheader("📋 Detected Clauses")
         
-        # Display PDF information and download option
-        st.markdown("**PDF Preview (with detected clause highlights):**")
+        # Group clauses by type
+        clause_groups = {}
+        for clause in clauses:
+            clause_type = clause.get('type', 'Unknown')
+            if clause_type not in clause_groups:
+                clause_groups[clause_type] = []
+            clause_groups[clause_type].append(clause)
         
-        # Show PDF info and download option
-        st.info("📄 PDF is ready for download. Click the download button above to view the highlighted PDF with all detected clauses.")
-        
-        # Show PDF metadata
-        st.markdown("**PDF Information:**")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("File Size", f"{len(highlighted_pdf_data) / 1024:.1f} KB")
-        with col2:
-            st.metric("Clauses Found", f"{len(clauses)}")
-        
-        # Show a preview of detected clauses
-        if clauses:
-            st.markdown("**Detected Clauses Preview:**")
-            clause_types = list(set([clause.get('type', 'Unknown') for clause in clauses]))
-            st.write(f"Found {len(clause_types)} different clause types: {', '.join(clause_types[:5])}{'...' if len(clause_types) > 5 else ''}")
-        
-    except Exception as e:
-        st.error(f"Could not display PDF: {e}")
-        st.info("You can download the PDF using the button above to view it locally.")
+        for clause_type, type_clauses in clause_groups.items():
+            with st.expander(f"{clause_type} ({len(type_clauses)} found)", expanded=True):
+                for i, clause in enumerate(type_clauses):
+                    score = clause.get('score', 0)
+                    text = clause.get('text', '')
+                    page = clause.get('page', 1)
+                  
+                    confidence_color = "🟢" if score > 0.1 else "🟡" if score > 0.05 else "🔴"
+                    confidence_text = "High" if score > 0.1 else "Medium" if score > 0.05 else "Low"
+                 
+                    col1, col2 = st.columns([3, 1])
+                    
+                    with col1:
+                        st.markdown(f"**{confidence_color} {confidence_text} Confidence**")
+                        st.markdown(f"**Page {page}**")
+                        st.markdown(f"*{text[:200]}{'...' if len(text) > 200 else ''}*")
+                    
+                    with col2:
+                        st.progress(score)
+                        st.caption(f"{score:.1%}")
+    else:
+        st.info("No clauses detected in this document.")
 
 else:
     st.info("📁 Upload a PDF from the sidebar to start analysis.")
