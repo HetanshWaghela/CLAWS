@@ -11,17 +11,13 @@ from string import Template
 st.set_page_config(page_title="CLAWS", layout="wide")
 st.title("CLAWS - Clause Law Assessment Workflow System")
 
-# Simple test first
-st.info("App is loading...")
-
-# Try to import modules
+# Import modules
 try:
     from app.parser import parse_pdf
     from app.qa_system import parse_question, get_policy_explanation, retrieve_clause, generate_answer, generate_contract_summary
     from app.llm_generator import get_llm_generator
-    st.success("✅ All modules imported successfully!")
 except ImportError as e:
-    st.error(f"❌ Import error: {e}")
+    st.error(f"Import error: {e}")
     st.stop()
 
 st.sidebar.header("Upload PDF")
