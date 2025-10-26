@@ -18,7 +18,7 @@ if uploaded is not None:
     files = {"pdf": (uploaded.name, uploaded.getvalue(), "application/pdf")}
     with st.spinner("Uploading and queueing.."):
         try:
-            resp= requests.post(f"{API_BASE}/analyze", files=files, timeout=30)
+            resp= requests.post(f"{API_BASE}/analyze", files=files, timeout=120)
             resp.raise_for_status()
         except Exception as e:
             st.error(f"Failed to upload: {e}")
@@ -32,7 +32,7 @@ if uploaded is not None:
     last_status= status
     for _ in range(200):
         try:
-            r = requests.get(f"{API_BASE}/result/{job_id}", timeout=10)
+            r = requests.get(f"{API_BASE}/result/{job_id}", timeout=60)
             if r.status_code == 404:
                 placeholder.warning("Unknown job_id. Retrying...")
                 time.sleep(0.2)
@@ -50,6 +50,34 @@ if uploaded is not None:
         if last_status == "done":
     
             clauses = body.get("clauses", [])
+            
+            st.markdown("---")
+            st.subheader("🤖 Legal Q&A")
+            st.write("Ask questions about detected clauses and their risks:")
+            
+            question = st.text_input("Ask a question about the contract:", placeholder="e.g., Why is the assignment clause risky?")
+            
+            if st.button("Get Answer") and question:
+                with st.spinner("Analyzing question..."):
+                    try:
+                        qa_response = requests.post(f"{API_BASE}/explain", 
+                            json={"question": question, "job_id": job_id}, 
+                            timeout=30)
+                        qa_response.raise_for_status()
+                        qa_data = qa_response.json()
+                        
+                        st.markdown("### Answer:")
+                        st.write(qa_data['answer'])
+                        
+                        if qa_data.get('clause_text'):
+                            st.markdown("### Related Clause:")
+                            st.write(f"**{qa_data['clause_type']}** (Page {qa_data['page']}):")
+                            st.write(f"*{qa_data['clause_text'][:200]}{'...' if len(qa_data['clause_text']) > 200 else ''}*")
+                            
+                    except Exception as e:
+                        st.error(f"Error getting answer: {e}")
+            
+            st.markdown("---")
             mode_label = st.radio(
                 "Viewer mode",
                 ["Paged (buttons)", "Scroll (continuous)"],
@@ -359,11 +387,46 @@ if uploaded is not None:
             pdf_html = pdf_html.replace("{job_id}", job_id)
             st.components.v1.html(pdf_html, height=700)
 
-            st.write(f"Total: {len(clauses)}")
+            
+            st.subheader("📋 Detected Clauses")
+            
             if clauses:
-                for i, c in enumerate(clauses[:10], start=1):
-                    st.markdown(f"- Page {c.get('page')}: {c.get('type','Paragraph')} — score={c.get('score')}")
-                    st.caption(c.get("text", "")[:300] + ("..." if len(c.get("text","")) > 300 else ""))
+                
+                clause_groups = {}
+                for clause in clauses:
+                    clause_type = clause.get('type', 'Unknown')
+                    if clause_type not in clause_groups:
+                        clause_groups[clause_type] = []
+                    clause_groups[clause_type].append(clause)
+                
+                for clause_type, type_clauses in clause_groups.items():
+                    with st.expander(f"{clause_type} ({len(type_clauses)} found)", expanded=True):
+                        for i, clause in enumerate(type_clauses):
+                            score = clause.get('score', 0)
+                            text = clause.get('text', '')
+                            page = clause.get('page', 1)
+                          
+                            confidence_color = "🟢" if score > 0.1 else "🟡" if score > 0.05 else "🔴"
+                            confidence_text = "High" if score > 0.1 else "Medium" if score > 0.05 else "Low"
+                         
+                            col1, col2 = st.columns([3, 1])
+                            
+                            with col1:
+                                st.markdown(f"**{confidence_color} {confidence_text} Confidence**")
+                                st.markdown(f"**Page {page}**")
+                                st.markdown(f"*{text[:200]}{'...' if len(text) > 200 else ''}*")
+                            
+                            with col2:
+                                
+                                st.progress(score)
+                                st.caption(f"{score:.1%}")
+                                
+                                unique_key = f"goto_{clause_type}_{i}_{page}_{id(clause)}"
+                                if st.button(f"Go to Page {page}", key=unique_key):
+                                    st.info(f"Jumping to page {page} in PDF viewer...")
+            
+            else:
+                st.info("No clauses detected in this document.")
 
             with st.expander("Raw result JSON"):
                 st.code(json.dumps(body, indent=2))

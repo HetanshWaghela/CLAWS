@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 .venv/
+claws_env/
 .env
 *.log
 .pytest_cache/
@@ -10,3 +11,4 @@ data/results/
 *.pdf
 claws_info.txt
 .json
+*.pt 

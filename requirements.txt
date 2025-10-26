@@ -4,3 +4,8 @@ pytest
 httpx
 pymupdf
 streamlit
+torch>=1.12.0
+transformers>=4.21.0
+peft
+accelerate
+tokenizers
