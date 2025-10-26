@@ -91,7 +91,7 @@ if pdf_data is not None:
         st.download_button(
             label="📥 Download Highlighted PDF",
             data=highlighted_pdf_data,
-            file_name=uploaded.name.replace('.pdf', '_highlighted.pdf'),
+            file_name=pdf_name.replace('.pdf', '_highlighted.pdf'),
             mime="application/pdf"
         )
         
