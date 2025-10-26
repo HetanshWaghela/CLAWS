@@ -158,7 +158,7 @@ if uploaded is not None:
     # PDF Viewer
     st.subheader("📄 Document Viewer")
     
-    # Use Streamlit's built-in PDF display
+    # Simple PDF display using base64
     try:
         st.download_button(
             label="📥 Download PDF",
@@ -167,13 +167,25 @@ if uploaded is not None:
             mime="application/pdf"
         )
         
-        # Show PDF using Streamlit's PDF component
+        # Convert PDF to base64 for display
+        base64_pdf = base64.b64encode(uploaded.getvalue()).decode('utf-8')
+        
+        # Display PDF using iframe (works on Streamlit Cloud)
+        pdf_display = f'''
+        <iframe src="data:application/pdf;base64,{base64_pdf}" 
+                width="100%" 
+                height="600" 
+                type="application/pdf"
+                style="border: 1px solid #ddd; border-radius: 5px;">
+        </iframe>
+        '''
+        
         st.markdown("**PDF Preview:**")
-        st.pdf(uploaded.getvalue())
+        st.markdown(pdf_display, unsafe_allow_html=True)
         
     except Exception as e:
         st.error(f"Could not display PDF: {e}")
-        st.info("You can download the PDF from the sidebar to view it locally.")
+        st.info("You can download the PDF using the button above to view it locally.")
 
 else:
     st.info("📁 Upload a PDF from the sidebar to start analysis.")
