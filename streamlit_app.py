@@ -81,17 +81,25 @@ if dark_mode:
         color: #fafafa !important;
     }
     
-    /* Drag and drop text - force visibility */
-    .stFileUploader div[data-testid="stFileUploader"] {
-        color: #000000 !important;
-    }
-    .stFileUploader div[data-testid="stFileUploader"] * {
-        color: #000000 !important;
-    }
-    .stFileUploader .uploadedFile {
-        color: #000000 !important;
-    }
-    .stFileUploader .uploadedFile * {
+    /* File uploader text - multiple targeting approaches */
+    .stFileUploader,
+    .stFileUploader *,
+    .stFileUploader div,
+    .stFileUploader span,
+    .stFileUploader p,
+    .stFileUploader label,
+    .stFileUploader .uploadedFile,
+    .stFileUploader .uploadedFile *,
+    .stFileUploader .uploadedFile div,
+    .stFileUploader .uploadedFile span,
+    .stFileUploader .uploadedFile p,
+    .stFileUploader .uploadedFile label,
+    [data-testid="stFileUploader"],
+    [data-testid="stFileUploader"] *,
+    [data-testid="stFileUploader"] div,
+    [data-testid="stFileUploader"] span,
+    [data-testid="stFileUploader"] p,
+    [data-testid="stFileUploader"] label {
         color: #000000 !important;
     }
     
