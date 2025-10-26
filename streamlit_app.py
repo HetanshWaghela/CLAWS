@@ -81,6 +81,14 @@ if dark_mode:
         color: #fafafa !important;
     }
     
+    /* Drag and drop text */
+    .stFileUploader .uploadedFile::before {
+        color: #fafafa !important;
+    }
+    .stFileUploader .uploadedFile::after {
+        color: #cccccc !important;
+    }
+    
     /* Toggle switch */
     .stToggle {
         background-color: #2d2d2d;
