@@ -38,7 +38,13 @@ class LLMGenerator:
         
         try:
             
-            prompt = f"Legal Contract Analysis\n\nContext: {clause_text}\nQuestion: {question}\nAnswer:"
+            # Create a more specific prompt for legal analysis
+            if "termination" in question.lower():
+                prompt = f"You are a legal expert analyzing contract clauses. Focus on termination risks and implications.\n\nContract Context: {clause_text}\n\nQuestion: {question}\n\nProvide a detailed legal analysis covering:\n1. Key termination provisions\n2. Potential risks and implications\n3. Important considerations for the parties\n\nAnswer:"
+            elif "risk" in question.lower():
+                prompt = f"You are a legal expert analyzing contract risks.\n\nContract Context: {clause_text}\n\nQuestion: {question}\n\nProvide a detailed risk assessment covering:\n1. Identified risks\n2. Severity levels\n3. Mitigation strategies\n\nAnswer:"
+            else:
+                prompt = f"Legal Contract Analysis\n\nContext: {clause_text}\nQuestion: {question}\n\nProvide a clear, professional legal analysis:\n\nAnswer:"
             
         
             inputs = self.tokenizer.encode(prompt, return_tensors='pt', max_length=512, truncation=True)

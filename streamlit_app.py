@@ -108,9 +108,29 @@ if uploaded is not None:
                 clause_type = parse_question(question)
                 
                 if clause_type == 'GENERAL_CONTRACT':
-                    answer = generate_contract_summary(clauses, question)
-                    st.success("**Answer:**")
-                    st.write(answer)
+                    # Use LLM for general contract questions
+                    try:
+                        context = "Contract clauses detected:\n"
+                        for clause in clauses[:10]:
+                            context += f"- {clause.get('type', 'Unknown')}: {clause.get('text', '')[:100]}...\n"
+                        
+                        llm_generator = get_llm_generator()
+                        prompt = f"{context}\n\nQuestion: {question}\n\nAnswer:"
+                        answer = llm_generator.generate_explanation(prompt, question)
+                        
+                        if answer and answer != "No explanation available":
+                            st.success("**Answer:**")
+                            st.write(answer)
+                        else:
+                            # Fallback to rule-based summary
+                            answer = generate_contract_summary(clauses, question)
+                            st.success("**Answer:**")
+                            st.write(answer)
+                    except Exception as llm_error:
+                        # Fallback to rule-based summary
+                        answer = generate_contract_summary(clauses, question)
+                        st.success("**Answer:**")
+                        st.write(answer)
                 
                 elif clause_type == 'GENERAL_QUESTION':
                     if clauses:
