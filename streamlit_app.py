@@ -73,11 +73,15 @@ if uploaded is not None:
             mime="application/pdf"
         )
         
-        # Display PDF information and download option
+        # Display PDF using official streamlit-pdf component
         st.markdown("**PDF Preview (with detected clause highlights):**")
         
-        # Show PDF info and download option
-        st.info("📄 PDF is ready for download. Click the download button above to view the highlighted PDF with all detected clauses.")
+        # Use the official st.pdf() component
+        try:
+            st.pdf(highlighted_pdf_data, height=600)
+        except Exception as pdf_error:
+            st.warning(f"PDF viewer not available: {pdf_error}")
+            st.info("📄 PDF is ready for download. Click the download button above to view the highlighted PDF with all detected clauses.")
         
         # Show PDF metadata
         st.markdown("**PDF Information:**")
