@@ -406,20 +406,8 @@ if uploaded is not None:
                             text = clause.get('text', '')
                             page = clause.get('page', 1)
                           
-                            confidence_color = "🟢" if score > 0.1 else "🟡" if score > 0.05 else "🔴"
-                            confidence_text = "High" if score > 0.1 else "Medium" if score > 0.05 else "Low"
-                         
-                            col1, col2 = st.columns([3, 1])
-                            
-                            with col1:
-                                st.markdown(f"**{confidence_color} {confidence_text} Confidence**")
-                                st.markdown(f"**Page {page}**")
-                                st.markdown(f"*{text[:200]}{'...' if len(text) > 200 else ''}*")
-                            
-                            with col2:
-                                
-                                st.progress(score)
-                                st.caption(f"{score:.1%}")
+                            st.markdown(f"**Page {page}**")
+                            st.markdown(f"*{text[:200]}{'...' if len(text) > 200 else ''}*")
                                 
                                 unique_key = f"goto_{clause_type}_{i}_{page}_{id(clause)}"
                                 if st.button(f"Go to Page {page}", key=unique_key):
